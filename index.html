@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Pilot Company – Staff Database</title>
+<style>
+:root{
+  --navy:#0b1f3a;--navy2:#132d52;--navy3:#1a3a6c;
+  --gold:#c9a03a;--gold2:#e8c060;
+  --red:#c0392b;--red2:#e74c3c;
+  --green:#1a6e3a;--green2:#27ae60;
+  --bg:#eef1f7;--surface:#fff;--surface2:#f4f6fb;
+  --border:#d0d7e3;--border2:#e4e8f0;
+  --text:#0d1a2e;--text2:#4a5568;--text3:#8896a8;
+  --sidebar:244px;--hdr:64px;--r:10px;--r2:14px;
+  --sh:0 2px 16px rgba(11,31,58,.10);--sh2:0 8px 40px rgba(11,31,58,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#b0bdd0;border-radius:3px}
+button{font-family:inherit;cursor:pointer;border:none}input,select,textarea{font-family:inherit}
+
+/* LOGIN */
+#loginWrap{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#071424 0%,#0b1f3a 45%,#0d2a50 100%);overflow:hidden}
+.lg-circles{position:absolute;inset:0;pointer-events:none}
+.lg-circles span{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(201,160,58,.15),transparent 70%)}
+.lg-circles span:nth-child(1){width:600px;height:600px;top:-200px;left:-200px}
+.lg-circles span:nth-child(2){width:400px;height:400px;bottom:-100px;right:-100px}
+.lg-circles span:nth-child(3){width:180px;height:180px;top:35%;left:62%}
+.lcard{position:relative;z-index:1;width:440px;max-width:96vw;background:rgba(255,255,255,.04);border:1px solid rgba(201,160,58,.2);border-radius:20px;backdrop-filter:blur(18px);box-shadow:0 24px 80px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.07);overflow:hidden}
+.lcard-top{padding:2.4rem 2rem 1.8rem;text-align:center;background:linear-gradient(180deg,rgba(201,160,58,.1),transparent);border-bottom:1px solid rgba(201,160,58,.12)}
+.llogo{width:72px;height:72px;margin:0 auto 1rem;border-radius:18px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(201,160,58,.4)}
+.llogo svg{width:34px;height:34px;color:#fff}
+.ltitle{color:#fff;font-size:24px;font-weight:800;letter-spacing:.2px}
+.lsub{display:block;font-size:11px;font-weight:400;color:rgba(201,160,58,.75);letter-spacing:1.6px;text-transform:uppercase;margin-top:4px}
+.lbody{padding:1.8rem 2rem 2rem}
+.llabel{font-size:11px;font-weight:600;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px;display:block}
+.linput{width:100%;padding:11px 14px;margin-bottom:1rem;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:9px;color:#fff;font-size:14px;outline:none;transition:border .2s,background .2s}
+.linput::placeholder{color:rgba(255,255,255,.28)}
+.linput:focus{border-color:var(--gold);background:rgba(255,255,255,.11)}
+.lerr{background:rgba(192,57,43,.22);border:1px solid rgba(231,76,60,.35);color:#ff9898;padding:9px 13px;border-radius:8px;font-size:12.5px;margin-bottom:1rem;display:none}
+.lbtn{width:100%;padding:13px;border-radius:9px;font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0b1f3a;box-shadow:0 4px 20px rgba(201,160,58,.35);transition:all .2s;letter-spacing:.3px}
+.lbtn:hover{transform:translateY(-1px);box-shadow:0 7px 28px rgba(201,160,58,.5)}
+.lhint{text-align:center;font-size:11.5px;color:rgba(255,255,255,.28);margin-top:.9rem}
+.lhint b{color:rgba(201,160,58,.65)}
+.fb-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:.6rem;font-size:11.5px}
+.fb-dot{width:8px;height:8px;border-radius:50%;background:#888;display:inline-block;transition:background .3s}
+.fb-dot.ok{background:#27ae60}.fb-dot.err{background:#e74c3c}.fb-dot.spin{background:#c9a03a;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* APP */
+#appWrap{display:none;height:100vh;overflow:hidden}
+.shell{display:flex;height:100%}
+.gold-line{height:3px;background:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold));flex-shrink:0}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;box-shadow:2px 0 24px rgba(0,0,0,.2);position:relative;z-index:10}
+.sb-brand{padding:0 1.3rem;height:var(--hdr);display:flex;align-items:center;gap:11px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.sb-icon{width:40px;height:40px;border-radius:11px;flex-shrink:0;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center}
+.sb-icon svg{width:20px;height:20px;color:#0b1f3a}
+.sb-txt h2{color:#fff;font-size:13.5px;font-weight:800;line-height:1.2}
+.sb-txt small{color:rgba(201,160,58,.65);font-size:10px;letter-spacing:.4px}
+.sb-nav{flex:1;padding:.8rem 0;overflow-y:auto}
+.sb-sec{padding:.6rem 1.3rem .2rem;font-size:10px;font-weight:700;color:rgba(255,255,255,.22);text-transform:uppercase;letter-spacing:1.2px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 1.3rem;color:rgba(255,255,255,.52);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;user-select:none}
+.sb-item:hover{color:rgba(255,255,255,.9);background:rgba(255,255,255,.05)}
+.sb-item.active{color:#fff;background:rgba(201,160,58,.11);border-left-color:var(--gold)}
+.sb-item svg{width:17px;height:17px;flex-shrink:0}
+.sb-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center}
+.sb-foot{padding:1rem 1.3rem;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.sb-user{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.sb-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#0b1f3a;font-size:14px;flex-shrink:0}
+.sb-uinfo strong{display:block;color:#fff;font-size:13px}
+.sb-uinfo span{color:rgba(255,255,255,.38);font-size:11px}
+.sb-out{width:100%;padding:8px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.sb-out:hover{background:rgba(255,255,255,.12);color:#fff}
+.fb-indicator{display:flex;align-items:center;gap:5px;font-size:10.5px;color:rgba(255,255,255,.35);margin-bottom:8px;padding:5px 8px;background:rgba(255,255,255,.04);border-radius:6px}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:var(--hdr);background:var(--surface);border-bottom:1px solid var(--border2);padding:0 1.8rem;display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.topbar-title{font-size:19px;font-weight:800;flex:1;color:var(--navy)}
+.pg{padding:1.5rem 1.8rem;flex:1;overflow-y:auto}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap;cursor:pointer}
+.btn svg{width:15px;height:15px;flex-shrink:0}
+.btn-navy{background:var(--navy);color:#fff}.btn-navy:hover{background:var(--navy2)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0b1f3a}.btn-gold:hover{filter:brightness(1.08)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:var(--green2)}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{background:var(--red2)}
+.btn-outline{background:transparent;color:var(--text);border:1.5px solid var(--border)}.btn-outline:hover{background:var(--surface2)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:7px}
+.iBtn{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);color:var(--text2);transition:all .15s;cursor:pointer;flex-shrink:0}
+.iBtn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.iBtn.del:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.iBtn svg{width:13px;height:13px}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:12px;margin-bottom:1.4rem}
+.stat{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r2);padding:1.1rem 1.2rem;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:.08}
+.s-navy::after{background:var(--navy)}.s-gold::after{background:var(--gold)}.s-green::after{background:var(--green2)}.s-red::after{background:var(--red2)}
+.st-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:.65rem}
+.st-icon svg{width:20px;height:20px}
+.s-navy .st-icon{background:#e8edf5;color:var(--navy)}.s-green .st-icon{background:#e0f5e8;color:var(--green)}.s-red .st-icon{background:#fde8e8;color:var(--red)}
+.st-val{font-size:28px;font-weight:800;line-height:1}.st-lbl{font-size:12px;color:var(--text2);margin-top:3px}
+.s-red .st-val{color:var(--red)}
+
+/* TOOLBAR */
+.toolbar{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:.85rem 1.1rem;margin-bottom:.9rem;display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.srch{display:flex;align-items:center;gap:7px;flex:1;min-width:200px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:7px 11px}
+.srch svg{width:15px;height:15px;color:var(--text3);flex-shrink:0}
+.srch input{border:none;background:transparent;outline:none;font-size:13.5px;color:var(--text);width:100%}
+.flt{padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:var(--surface2);outline:none;cursor:pointer}
+.flt:focus{border-color:var(--navy)}
+
+/* BULK BAR */
+.bulk-bar{display:none;background:linear-gradient(135deg,#0b1f3a,#132d52);border:1px solid rgba(201,160,58,.3);border-radius:var(--r);padding:.7rem 1.1rem;margin-bottom:.8rem;align-items:center;gap:9px;flex-wrap:wrap}
+.bulk-bar.show{display:flex}
+.bulk-cnt{background:var(--gold);color:#0b1f3a;font-weight:800;padding:2px 10px;border-radius:20px;font-size:12px}
+
+/* TABLE */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden;box-shadow:var(--sh)}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:1100px}
+thead{background:linear-gradient(90deg,#0b1f3a,#1a3a6c)}
+thead th{padding:11px 12px;font-size:11.5px;font-weight:600;color:rgba(255,255,255,.82);text-align:left;white-space:nowrap}
+thead th.sort{cursor:pointer;user-select:none}
+thead th.sort:hover{color:#fff;background:rgba(255,255,255,.07)}
+tbody tr{border-bottom:1px solid var(--border2);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f0f5ff}
+tbody tr.sel-row{background:#fffbef!important}
+td{padding:9px 12px;font-size:13px;vertical-align:middle}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.bm{background:#dbeafe;color:#1e40af}.bf{background:#fce7f3;color:#9d174d}.bc{background:#d1fae5;color:#065f46}
+.exp-ok{font-size:13px}
+.exp-w{display:inline-flex;align-items:center;gap:4px;background:#fde8e8;color:var(--red);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.exp-x{display:inline-flex;align-items:center;gap:4px;background:var(--red);color:#fff;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.thumb{width:38px;height:38px;border-radius:7px;object-fit:cover;border:1.5px solid var(--border);cursor:zoom-in;transition:transform .15s;display:block}
+.thumb:hover{transform:scale(1.12);box-shadow:0 3px 14px rgba(0,0,0,.22)}
+.no-img{width:38px;height:38px;border-radius:7px;background:var(--surface2);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:17px}
+.row-acts{display:flex;gap:5px}
+
+/* PAGINATION */
+.pg-bar{display:flex;align-items:center;gap:7px;padding:11px 14px;background:var(--surface2);border-top:1px solid var(--border2);flex-wrap:wrap}
+.pg-btn{padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--text);cursor:pointer;transition:all .15s}
+.pg-btn:hover:not(:disabled){background:var(--navy);color:#fff;border-color:var(--navy)}
+.pg-btn.cur{background:var(--navy);color:#fff;border-color:var(--navy)}
+.pg-btn:disabled{opacity:.35;cursor:not-allowed}
+.pg-info{margin-left:auto;font-size:12px;color:var(--text3)}
+
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(5,15,35,.58);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;backdrop-filter:blur(3px)}
+.mo-box{background:var(--surface);border-radius:16px;width:650px;max-width:100%;max-height:92vh;overflow-y:auto;box-shadow:var(--sh2);display:flex;flex-direction:column}
+.mo-hdr{padding:1.2rem 1.4rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--surface);z-index:1}
+.mo-hdr h2{font-size:16px;font-weight:700;flex:1;color:var(--navy)}
+.mo-cls{width:28px;height:28px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:all .15s;flex-shrink:0}
+.mo-cls:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.mo-cls svg{width:13px;height:13px}
+.mo-body{padding:1.4rem;flex:1}
+.mo-foot{padding:.9rem 1.4rem;border-top:1px solid var(--border2);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:var(--surface)}
+
+/* FORM */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.fgr{display:flex;flex-direction:column;gap:5px}
+.fgr.full{grid-column:1/-1}
+.fgr label{font-size:11.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+.fgr input,.fgr select,.fgr textarea{padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;color:var(--text);background:var(--surface2);outline:none;transition:border .2s,box-shadow .2s}
+.fgr input:focus,.fgr select:focus,.fgr textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(11,31,58,.09);background:#fff}
+.fgr textarea{resize:vertical;min-height:68px}
+
+/* UPLOAD */
+.upl{border:2px dashed var(--border);border-radius:9px;padding:11px;text-align:center;cursor:pointer;transition:border .2s,background .2s;background:var(--surface2);position:relative;overflow:hidden;min-height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.upl:hover{border-color:var(--navy);background:#f0f4fb}
+.upl input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upl .upl-img{max-height:100px;max-width:100%;border-radius:6px;margin-top:5px;object-fit:contain;display:none}
+.upl .upl-txt{font-size:11.5px;color:var(--text3);pointer-events:none;margin-top:3px}
+.upl svg.upl-ic{color:#b8c5d6}
+
+/* CONFIRM */
+.conf .mo-box{max-width:370px;text-align:center}
+.conf-icon{width:58px;height:58px;border-radius:50%;background:#fde8e8;display:flex;align-items:center;justify-content:center;margin:0 auto .9rem}
+.conf-icon svg{width:28px;height:28px;color:var(--red)}
+
+/* LIGHTBOX */
+.lbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:2000;cursor:zoom-out}
+.lbox img{max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 0 80px rgba(0,0,0,.6)}
+
+/* DASHBOARD */
+.db-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:1rem}
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r2);padding:1.2rem}
+.card h3{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:1rem}
+.bar-row{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.bar-lbl{width:110px;font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;background:var(--bg);border-radius:4px;height:20px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;transition:width .7s ease}
+.bar-fill span{font-size:10px;color:#fff;font-weight:700}
+.bar-n{width:24px;text-align:right;font-size:12px;font-weight:700;color:var(--text)}
+.exp-item{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:#fff8f8;border:1px solid #ffd5d5;border-radius:8px;margin-bottom:7px}
+.exp-item .nm{font-weight:600;font-size:13px}.exp-item .sub{font-size:11px;color:var(--text3)}
+.exp-days-b{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--red);color:#fff}
+.exp-days-b.xp{background:#7a1010}
+
+/* IMPORT */
+.imp-note{background:#eef4ff;border:1px solid #c0d4f5;border-radius:9px;padding:11px 14px;font-size:13px;color:var(--navy2);margin-bottom:1rem}
+.imp-note code{display:block;font-family:monospace;font-size:12px;color:var(--text2);margin-top:5px;background:rgba(0,0,0,.04);padding:6px 9px;border-radius:6px}
+
+/* USERS */
+.ucard{display:flex;align-items:center;gap:12px;padding:11px 13px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;margin-bottom:8px}
+.rbadge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-left:auto}
+.r-admin{background:#dbeafe;color:#1e40af}.r-view{background:#d1fae5;color:#065f46}
+
+/* LOADING OVERLAY */
+.loading-overlay{position:fixed;inset:0;background:rgba(11,31,58,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:8000;backdrop-filter:blur(4px)}
+.loading-overlay .spin{width:52px;height:52px;border:4px solid rgba(201,160,58,.3);border-top-color:var(--gold);border-radius:50%;animation:spin .9s linear infinite;margin-bottom:1.2rem}
+.loading-overlay p{color:#fff;font-size:15px;font-weight:600}
+.loading-overlay small{color:rgba(255,255,255,.5);font-size:12px;margin-top:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+#toast{position:fixed;bottom:22px;right:22px;padding:10px 18px;border-radius:9px;font-size:13.5px;font-weight:600;color:#fff;z-index:9999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.ok{background:var(--green)}#toast.err{background:var(--red)}#toast.info{background:var(--navy)}
+
+/* EMPTY */
+.empty{text-align:center;padding:3.5rem 1rem;color:var(--text3)}
+.empty svg{width:52px;height:52px;margin:0 auto .8rem;display:block;opacity:.3}
+.empty h3{font-size:15px;color:var(--text2);margin-bottom:5px}
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spin"></div>
+  <p id="loadingTitle">Connecting to Firebase…</p>
+  <small id="loadingMsg">Loading Pilot Company Staff Database</small>
+</div>
+
+<!-- LOGIN -->
+<div id="loginWrap" style="display:none">
+  <div class="lg-circles"><span></span><span></span><span></span></div>
+  <div class="lcard">
+    <div class="lcard-top">
+      <div class="llogo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="ltitle">Pilot Company</div>
+      <span class="lsub">Staff Database &nbsp;·&nbsp; Powered by Bilal Javeed</span>
+    </div>
+    <div class="lbody">
+      <div class="lerr" id="lErr">Invalid username or password.</div>
+      <label class="llabel">Username</label>
+      <input class="linput" id="lU" placeholder="Enter username" autocomplete="username">
+      <label class="llabel">Password</label>
+      <input class="linput" id="lP" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="lbtn" onclick="doLogin()">Sign In →</button>
+      <div class="lhint">Default: <b>admin / admin123</b> &nbsp;·&nbsp; <b>viewer / view123</b></div>
+      <div class="fb-status"><span class="fb-dot spin" id="fbDot"></span><span id="fbStatusTxt" style="color:rgba(255,255,255,.4)">Connecting to Firebase…</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appWrap">
+<div class="shell">
+  <nav class="sidebar" id="sidebar">
+    <div class="gold-line"></div>
+    <div class="sb-brand">
+      <div class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="sb-txt"><h2>Pilot Company</h2><small>Staff Database</small></div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-sec">Main</div>
+      <div class="sb-item active" onclick="goPage('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</div>
+      <div class="sb-item" onclick="goPage('staff')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Staff Records</div>
+      <div class="sb-item" onclick="goPage('expiry')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Expiry Alerts<span class="sb-badge" id="sbBadge" style="display:none"></span></div>
+      <div class="sb-sec">Tools</div>
+      <div class="sb-item" onclick="goPage('import')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import Data</div>
+      <div class="sb-item" id="navU" onclick="goPage('users')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Manage Users</div>
+    </div>
+    <div class="sb-foot">
+      <div class="fb-indicator"><span class="fb-dot ok" id="sbFbDot"></span><span id="sbFbTxt">Firebase Connected</span></div>
+      <div class="sb-user"><div class="sb-av" id="sbAv">A</div><div class="sb-uinfo"><strong id="sbUN">Admin</strong><span id="sbRole">Administrator</span></div></div>
+      <button class="sb-out" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="gold-line"></div>
+    <div class="topbar">
+      <div class="topbar-title" id="pgTitle">Dashboard</div>
+      <button class="btn btn-gold" id="addBtn" onclick="openAdd()" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Staff</button>
+    </div>
+    <div class="pg">
+
+      <!-- DASHBOARD -->
+      <div id="pg-dashboard">
+        <div class="stats-row" id="statsRow"></div>
+        <div class="db-grid">
+          <div class="card"><h3>📊 Staff by Category</h3><div id="catChart"></div></div>
+          <div class="card"><h3>⚠️ Expiry Alerts — Next 30 Days</h3><div id="dbExpList"></div></div>
+        </div>
+      </div>
+
+      <!-- STAFF -->
+      <div id="pg-staff" style="display:none">
+        <div class="toolbar">
+          <div class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="srchIn" placeholder="Search name, schedule or QID…" oninput="pgNum=1;renderTbl()"></div>
+          <select class="flt" id="fG" onchange="pgNum=1;renderTbl()"><option value="">All Genders</option><option>Male</option><option>Female</option><option>Other</option></select>
+          <select class="flt" id="fC" onchange="pgNum=1;renderTbl()"><option value="">All Categories</option></select>
+          <select class="flt" id="fE" onchange="pgNum=1;renderTbl()"><option value="">All Status</option><option value="qid">QID Expiring</option><option value="fhc">FHC Expiring</option><option value="any">Any Expiring</option></select>
+        </div>
+        <div class="bulk-bar" id="bulkBar">
+          <span class="bulk-cnt" id="bulkCnt">0</span><span style="color:rgba(255,255,255,.8);font-size:13px;font-weight:500">staff selected</span>
+          <button class="btn btn-green btn-sm" onclick="exportXLSX(true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Excel + Photos</button>
+          <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.25)" onclick="exportPDF(true)">PDF</button>
+          <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.25)" onclick="exportWord(true)">Word</button>
+          <button class="btn btn-red btn-sm" onclick="bulkDel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>Delete Selected</button>
+          <button class="btn btn-outline btn-sm" style="color:rgba(255,255,255,.6);border-color:rgba(255,255,255,.2);margin-left:auto" onclick="clearSel()">✕ Clear</button>
+        </div>
+        <div style="display:flex;gap:7px;margin-bottom:.9rem;flex-wrap:wrap;align-items:center">
+          <span style="font-size:12px;color:var(--text3)">Export All/Filtered:</span>
+          <button class="btn btn-green btn-sm" onclick="exportXLSX(false)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Excel (.xlsx) with Photos</button>
+          <button class="btn btn-outline btn-sm" onclick="exportPDF(false)">PDF Print</button>
+          <button class="btn btn-outline btn-sm" onclick="exportWord(false)">Word (.doc)</button>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr>
+                <th style="width:36px"><input type="checkbox" id="selAll" onchange="toggleAll(this)"></th>
+                <th class="sort" onclick="doSort('sr')">Sr # ↕</th>
+                <th class="sort" onclick="doSort('name')">Name (As Per QID) ↕</th>
+                <th class="sort" onclick="doSort('schedule')">Schedule Name ↕</th>
+                <th class="sort" onclick="doSort('qid')">QID Number ↕</th>
+                <th class="sort" onclick="doSort('qidexp')">QID Expiry ↕</th>
+                <th>Gender</th><th>Category</th>
+                <th>FHC Photo</th>
+                <th class="sort" onclick="doSort('fhcexp')">FHC Expiry ↕</th>
+                <th>QID Image</th><th>Staff Photo</th>
+                <th>Comment</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="tBody"></tbody>
+            </table>
+          </div>
+          <div class="pg-bar" id="pgBar"></div>
+        </div>
+      </div>
+
+      <!-- EXPIRY -->
+      <div id="pg-expiry" style="display:none"><div id="expContent"></div></div>
+
+      <!-- IMPORT -->
+      <div id="pg-import" style="display:none">
+        <div style="max-width:580px">
+          <div class="imp-note">
+            <strong>CSV Column Order:</strong>
+            <code>Name, ScheduleName, QIDNumber, QIDExpiry, Gender, Category, FHCExpiry, Comment</code>
+            <div style="margin-top:7px;font-size:12px;color:#5a7aaa">📅 Date: DD/MM/YYYY or YYYY-MM-DD &nbsp;·&nbsp; 🖼 Photos uploaded via Edit after import</div>
+          </div>
+          <div class="card">
+            <h3>Upload CSV File</h3>
+            <div class="upl" style="margin-top:10px"><input type="file" id="csvFile" accept=".csv" onchange="previewCSV(this)"><svg class="upl-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><div class="upl-txt">Click or drag &amp; drop CSV file</div></div>
+            <div id="csvMsg" style="margin-top:10px;font-size:13px;color:var(--text2)"></div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+              <button class="btn btn-navy" onclick="doImport()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import Records</button>
+              <button class="btn btn-outline" onclick="dlTemplate()">⬇ Download Template</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div id="pg-users" style="display:none">
+        <div style="max-width:640px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <p style="font-size:13px;color:var(--text2)">Manage login accounts for this system.</p>
+            <button class="btn btn-navy btn-sm" onclick="openAddUser()">+ Add User</button>
+          </div>
+          <div id="usersList"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- STAFF MODAL -->
+<div class="mo" id="staffMo" style="display:none" onclick="if(event.target===this)closeStaffMo()">
+  <div class="mo-box">
+    <div class="mo-hdr"><h2 id="staffMoTitle">Add Staff Member</h2><div class="mo-cls" onclick="closeStaffMo()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div>
+    <div class="mo-body">
+      <div class="fg">
+        <div class="fgr"><label>Name as per QID *</label><input id="fn" placeholder="Full legal name"></div>
+        <div class="fgr"><label>Schedule Name</label><input id="fs" placeholder="Name in schedules"></div>
+        <div class="fgr"><label>QID Number</label><input id="fq" placeholder="e.g. 29012345678"></div>
+        <div class="fgr"><label>QID Expiry Date</label><input type="date" id="fqe"></div>
+        <div class="fgr"><label>Gender</label><select id="fg_"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+        <div class="fgr"><label>Staff Category</label><input id="fcat" placeholder="e.g. Security, Driver"></div>
+        <div class="fgr full"><label>FHC Expiry Date</label><input type="date" id="ffe" style="max-width:240px"></div>
+        <div class="fgr full"><label>Comment / Notes</label><textarea id="fcmt" placeholder="Any notes…"></textarea></div>
+        <div class="fgr">
+          <label>QID Document Image</label>
+          <div class="upl" id="qaArea"><input type="file" id="fqi" accept="image/*" onchange="loadImg(this,'qaPrev','qaArea')"><svg class="upl-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><div class="upl-txt">Click to upload QID image</div><img class="upl-img" id="qaPrev" alt=""></div>
+        </div>
+        <div class="fgr">
+          <label>FHC Document Photo</label>
+          <div class="upl" id="faArea"><input type="file" id="ffi" accept="image/*" onchange="loadImg(this,'faPrev','faArea')"><svg class="upl-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div class="upl-txt">Click to upload FHC photo</div><img class="upl-img" id="faPrev" alt=""></div>
+        </div>
+        <div class="fgr">
+          <label>Staff Photo</label>
+          <div class="upl" id="saArea"><input type="file" id="fsi" accept="image/*" onchange="loadImg(this,'saPrev','saArea')"><svg class="upl-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="upl-txt">Click to upload staff photo</div><img class="upl-img" id="saPrev" alt=""></div>
+        </div>
+      </div>
+    </div>
+    <div class="mo-foot"><button class="btn btn-outline" onclick="closeStaffMo()">Cancel</button><button class="btn btn-navy" id="saveBtnMo" onclick="saveStaff()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>Save Record</button></div>
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div class="mo" id="userMo" style="display:none" onclick="if(event.target===this)closeUserMo()">
+  <div class="mo-box" style="max-width:400px">
+    <div class="mo-hdr"><h2 id="userMoTitle">Add User</h2><div class="mo-cls" onclick="closeUserMo()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div>
+    <div class="mo-body"><div class="fg" style="grid-template-columns:1fr"><div class="fgr"><label>Username *</label><input id="uun" placeholder="Username"></div><div class="fgr"><label>Password *</label><input type="password" id="upw" placeholder="Password"></div><div class="fgr"><label>Role</label><select id="url"><option value="admin">Administrator</option><option value="viewer">Viewer (read-only)</option></select></div></div></div>
+    <div class="mo-foot"><button class="btn btn-outline" onclick="closeUserMo()">Cancel</button><button class="btn btn-navy" onclick="saveUser()">Save User</button></div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="mo conf" id="confMo" style="display:none">
+  <div class="mo-box">
+    <div class="mo-body" style="padding:2rem 1.4rem;text-align:center">
+      <div class="conf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></div>
+      <h3 id="confT" style="font-size:17px;font-weight:700;margin-bottom:8px;color:var(--navy)">Confirm Delete</h3>
+      <p id="confM" style="font-size:13px;color:var(--text2);line-height:1.6">This cannot be undone.</p>
+    </div>
+    <div class="mo-foot" style="justify-content:center;gap:12px"><button class="btn btn-outline" onclick="closeConf()">Cancel</button><button class="btn btn-red" id="confOk">Delete</button></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lbox" id="lbox" style="display:none" onclick="this.style.display='none'"><img id="lboxImg" src="" alt=""></div>
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════
+     FIREBASE SDK
+════════════════════════════════════════ -->
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  FIREBASE INIT — runs first, everything else waits for this
+// ═══════════════════════════════════════════════════════════════
+// Firebase loaded via compat CDN scripts in <head> — faster, single request
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyBOrNDwCB7zhwrvycU1TCb1024WVj-HUVk",
+  authDomain:        "pilotcompanystaff.firebaseapp.com",
+  projectId:         "pilotcompanystaff",
+  storageBucket:     "pilotcompanystaff.firebasestorage.app",
+  messagingSenderId: "823897367388",
+  appId:             "1:823897367388:web:6d13097f676f36fdbc1799"
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  GLOBAL STATE
+// ═══════════════════════════════════════════════════════════════
+let CU = null;
+let allStaff = [];
+let pgNum=1, pPer=15, sKey='sr', sDir=1;
+let editId=null, editUid=null, _csv=null;
+
+// ═══════════════════════════════════════════════════════════════
+//  LOCAL USER ACCOUNTS (localStorage only)
+// ═══════════════════════════════════════════════════════════════
+function getUsers(){
+  try{return JSON.parse(localStorage.getItem('pc_users'))||defaultUsers()}catch(e){return defaultUsers()}
+}
+function defaultUsers(){return [{id:1,username:'admin',password:'admin123',role:'admin'},{id:2,username:'viewer',password:'view123',role:'viewer'}]}
+function saveUsers(u){localStorage.setItem('pc_users',JSON.stringify(u))}
+if(!localStorage.getItem('pc_users')) saveUsers(getUsers());
+
+// ═══════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════
+function fmtD(d){if(!d)return'—';try{return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}catch(e){return d}}
+function dL(d){if(!d)return 9999;return Math.ceil((new Date(d+'T00:00:00')-new Date())/86400000)}
+function soon(d){const n=dL(d);return n>=0&&n<=31}
+function xpd(d){return dL(d)<0}
+function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className='show '+t;setTimeout(()=>el.className='',3200)}
+function showLoad(msg,sub){
+  document.getElementById('loadingOverlay').style.display='flex';
+  if(msg)document.getElementById('loadingTitle').textContent=msg;
+  if(sub)document.getElementById('loadingMsg').textContent=sub;
+}
+function hideLoad(){document.getElementById('loadingOverlay').style.display='none'}
+function showLbox(src){document.getElementById('lboxImg').src=src;document.getElementById('lbox').style.display='flex'}
+window.showLbox = showLbox;
+function renum(){allStaff.sort((a,b)=>(a.sr||0)-(b.sr||0));allStaff.forEach((s,i)=>s.sr=i+1)}
+
+// ═══════════════════════════════════════════════════════════════
+//  FIRESTORE — CRUD
+// ═══════════════════════════════════════════════════════════════
+async function loadStaffFromFirestore(){
+  allStaff = await window._FB.loadStaff();
+  renum();
+}
+
+async function saveStaffDoc(s){
+  await window._FB.saveDoc(s);
+}
+
+async function deleteStaffDoc(id){
+  await window._FB.deleteDoc(id);
+}
+
+async function renumAndSaveAll(){
+  renum();
+  const promises = allStaff.map(s => saveStaffDoc(s));
+  await Promise.all(promises);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FIREBASE STORAGE — UPLOAD IMAGE
+// ═══════════════════════════════════════════════════════════════
+async function uploadImg(base64DataUrl, staffId, imgType){
+  if(!base64DataUrl||!base64DataUrl.startsWith('data:')) return '';
+  showLoad('','');
+  try {
+    const url = await window._FB.uploadImg(base64DataUrl, staffId, imgType,
+      (pct, label, sizeKB)=>{
+        document.getElementById('loadingTitle').textContent =
+          (pct===100?'✓ ':'')+'Uploading '+label+(pct>0?' — '+pct+'%':'…');
+        document.getElementById('loadingMsg').textContent =
+          sizeKB+'KB — saving to Firebase Storage';
+      }
+    );
+    return url || '';
+  } catch(err) {
+    console.error('Upload error:', err);
+    toast('Photo upload failed: '+err.message,'err');
+    hideLoad();
+    return '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════════════════
+async function doLogin(){
+  const u=document.getElementById('lU').value.trim();
+  const p=document.getElementById('lP').value;
+  const found=getUsers().find(x=>x.username===u&&x.password===p);
+  if(!found){document.getElementById('lErr').style.display='block';document.getElementById('lP').value='';return}
+  document.getElementById('lErr').style.display='none';
+  CU=found;
+  showLoad('Loading staff data…','Fetching records from Firebase…');
+  document.getElementById('loginWrap').style.display='none';
+  try{
+    await loadStaffFromFirestore();
+  }catch(e){
+    console.error('Firestore load error:',e);
+    toast('Could not load from Firebase. Check Firestore rules.','err');
+  }
+  hideLoad();
+  document.getElementById('appWrap').style.display='block';
+  document.getElementById('sbAv').textContent=u[0].toUpperCase();
+  document.getElementById('sbUN').textContent=u;
+  document.getElementById('sbRole').textContent=CU.role==='admin'?'Administrator':'Viewer';
+  document.getElementById('addBtn').style.display=CU.role==='admin'?'flex':'none';
+  document.getElementById('navU').style.display=CU.role==='admin'?'flex':'none';
+  goPage('dashboard');
+}
+window.doLogin = doLogin;
+
+function doLogout(){
+  CU=null;allStaff=[];
+  document.getElementById('appWrap').style.display='none';
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('lU').value='';document.getElementById('lP').value='';
+}
+window.doLogout = doLogout;
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    ['staffMo','userMo','confMo','lbox'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.style.display='none';
+    });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+const PAGES=['dashboard','staff','expiry','import','users'];
+const TITLES={dashboard:'Dashboard',staff:'Staff Records',expiry:'Expiry Alerts',import:'Import Data',users:'Manage Users'};
+function goPage(p){
+  PAGES.forEach(id=>document.getElementById('pg-'+id).style.display=id===p?'block':'none');
+  document.querySelectorAll('.sb-item').forEach(el=>el.classList.toggle('active',el.getAttribute('onclick')&&el.getAttribute('onclick').includes("'"+p+"'")));
+  document.getElementById('pgTitle').textContent=TITLES[p]||p;
+  document.getElementById('addBtn').style.display=(p==='staff'&&CU?.role==='admin')?'flex':'none';
+  if(p==='dashboard') renderDash();
+  if(p==='staff'){pgNum=1;renderTbl()}
+  if(p==='expiry') renderExpPage();
+  if(p==='users')  renderUsers();
+}
+window.goPage = goPage;
+
+// ═══════════════════════════════════════════════════════════════
+//  IMAGE PREVIEW (compress on select)
+// ═══════════════════════════════════════════════════════════════
+function loadImg(input,prevId,areaId){
+  const f=input.files[0];if(!f)return;
+  if(!f.type.match(/^image\//)){toast('Please select an image file (JPG, PNG, WEBP)','err');return}
+  const area=document.getElementById(areaId);
+  area.querySelectorAll('.upl-info').forEach(el=>el.remove());
+  area.querySelectorAll('svg.upl-ic,.upl-txt').forEach(el=>el.style.display='none');
+  const ld=document.createElement('div');ld.className='upl-info';
+  ld.style.cssText='font-size:12px;color:var(--navy);font-weight:600;padding:6px';
+  ld.textContent='⏳ Compressing…';area.appendChild(ld);
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const tmp=new Image();
+    tmp.onload=()=>{
+      const MAX=500,Q=0.55;  // 500px max, 55% quality ≈ 25-35KB per image
+      let w=tmp.width,h=tmp.height;
+      if(w>MAX||h>MAX){if(w>=h){h=Math.round(h*MAX/w);w=MAX}else{w=Math.round(w*MAX/h);h=MAX}}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(tmp,0,0,w,h);
+      const out=cv.toDataURL('image/jpeg',Q);
+      const kb=Math.round(out.length*0.75/1024);
+      document.getElementById(prevId).src=out;
+      document.getElementById(prevId).style.display='block';
+      area.querySelectorAll('.upl-info').forEach(el=>el.remove());
+      const info=document.createElement('div');info.className='upl-info';
+      info.style.cssText='font-size:10.5px;color:var(--green);font-weight:600;margin-top:4px';
+      info.textContent=`✓ Ready · ${w}×${h}px · ${kb}KB — click Save to upload`;
+      area.appendChild(info);
+    };
+    tmp.onerror=()=>{
+      area.querySelectorAll('.upl-info').forEach(el=>el.remove());
+      area.querySelectorAll('svg.upl-ic,.upl-txt').forEach(el=>el.style.display='');
+      toast('Could not read image. Try JPG or PNG.','err');
+    };
+    tmp.src=e.target.result;
+  };
+  reader.readAsDataURL(f);
+}
+window.loadImg = loadImg;
+
+function getImg(id){const el=document.getElementById(id);return el&&el.style.display!=='none'&&el.src&&el.src.startsWith('data:')?el.src:''}
+function setImg(prevId,areaId,src){
+  const img=document.getElementById(prevId);
+  const area=document.getElementById(areaId);
+  if(src){
+    img.src=src;img.style.display='block';
+    area.querySelectorAll('svg.upl-ic,.upl-txt').forEach(el=>el.style.display='none');
+  }else{
+    img.src='';img.style.display='none';
+    area.querySelectorAll('svg.upl-ic,.upl-txt').forEach(el=>el.style.display='');
+  }
+  area.querySelectorAll('.upl-info').forEach(el=>el.remove());
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+function renderDash(){
+  const arr=allStaff;
+  const wQ=arr.filter(s=>soon(s.qidexp)||xpd(s.qidexp));
+  const wF=arr.filter(s=>soon(s.fhcexp)||xpd(s.fhcexp));
+  const allW=[...new Map([...wQ,...wF].map(x=>[x.id,x])).values()];
+  const male=arr.filter(s=>s.gender==='Male').length;
+  const female=arr.filter(s=>s.gender==='Female').length;
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat s-navy"><div class="st-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="st-val">${arr.length}</div><div class="st-lbl">Total Staff</div></div>
+    <div class="stat s-navy"><div class="st-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></div><div class="st-val">${male}</div><div class="st-lbl">Male</div></div>
+    <div class="stat s-green"><div class="st-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></div><div class="st-val">${female}</div><div class="st-lbl">Female</div></div>
+    <div class="stat ${allW.length?'s-red':'s-green'}"><div class="st-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="st-val">${allW.length}</div><div class="st-lbl">Expiry Alerts</div></div>
+    <div class="stat ${wQ.length?'s-red':'s-navy'}"><div class="st-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div class="st-val">${wQ.length}</div><div class="st-lbl">QID Expiring</div></div>
+    <div class="stat ${wF.length?'s-red':'s-navy'}"><div class="st-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="st-val">${wF.length}</div><div class="st-lbl">FHC Expiring</div></div>`;
+  const cats={};arr.forEach(s=>{if(s.category)cats[s.category]=(cats[s.category]||0)+1});
+  const mx=Math.max(...Object.values(cats),1);
+  const cols=['#0b1f3a','#1a3a6c','#c9a03a','#1a6e3a','#8b1a1a','#2c5f8a','#6a3d9a'];
+  document.getElementById('catChart').innerHTML=Object.entries(cats).length?
+    Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,n],i)=>`<div class="bar-row"><div class="bar-lbl" title="${c}">${c}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/mx*100)}%;background:${cols[i%cols.length]}"><span>${n}</span></div></div><div class="bar-n">${n}</div></div>`).join('')
+    :'<p style="color:var(--text3);font-size:13px">No staff data yet</p>';
+  const sorted=allW.sort((a,b)=>Math.min(dL(a.qidexp),dL(a.fhcexp))-Math.min(dL(b.qidexp),dL(b.fhcexp))).slice(0,7);
+  document.getElementById('dbExpList').innerHTML=sorted.length?sorted.map(s=>{
+    const items=[];
+    if(soon(s.qidexp)||xpd(s.qidexp)){const d=dL(s.qidexp);items.push(`<div class="exp-item"><div><div class="nm">${s.name}</div><div class="sub">QID: ${s.qid||'—'}</div></div><span class="exp-days-b ${d<0?'xp':''}">${d<0?'EXPIRED':d+'d'}</span></div>`)}
+    if(soon(s.fhcexp)||xpd(s.fhcexp)){const d=dL(s.fhcexp);items.push(`<div class="exp-item"><div><div class="nm">${s.name}</div><div class="sub">FHC Document</div></div><span class="exp-days-b ${d<0?'xp':''}">${d<0?'EXPIRED':d+'d'}</span></div>`)}
+    return items.join('');
+  }).join(''):'<div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px">✓ No expiry alerts at this time</div>';
+  const b=document.getElementById('sbBadge');b.textContent=allW.length;b.style.display=allW.length?'':'none';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TABLE
+// ═══════════════════════════════════════════════════════════════
+function getFiltered(){
+  const q=(document.getElementById('srchIn')?.value||'').toLowerCase();
+  const g=document.getElementById('fG')?.value||'';
+  const c=document.getElementById('fC')?.value||'';
+  const e=document.getElementById('fE')?.value||'';
+  return allStaff.filter(s=>{
+    const mQ=!q||[s.name,s.schedule,s.qid].some(v=>(v||'').toLowerCase().includes(q));
+    const mG=!g||s.gender===g;
+    const mC=!c||s.category===c;
+    const mE=!e
+      ||(e==='qid'&&(soon(s.qidexp)||xpd(s.qidexp)))
+      ||(e==='fhc'&&(soon(s.fhcexp)||xpd(s.fhcexp)))
+      ||(e==='any'&&((soon(s.qidexp)||xpd(s.qidexp))||(soon(s.fhcexp)||xpd(s.fhcexp))));
+    return mQ&&mG&&mC&&mE;
+  }).sort((a,b)=>{
+    if(sKey==='sr')return(a.sr-b.sr)*sDir;
+    const av=String(a[sKey]||'').toLowerCase(),bv=String(b[sKey]||'').toLowerCase();
+    return av<bv?-sDir:av>bv?sDir:0;
+  });
+}
+window.doSort = (k)=>{sKey===k?sDir=-sDir:(sKey=k,sDir=1);renderTbl()};
+window.goPg   = (p)=>{pgNum=p;renderTbl()};
+window.toggleAll = (cb)=>{document.querySelectorAll('.rChk').forEach(c=>c.checked=cb.checked);updBulk()};
+window.clearSel  = ()=>{document.querySelectorAll('.rChk').forEach(c=>c.checked=false);const sa=document.getElementById('selAll');if(sa)sa.checked=false;updBulk()};
+
+function renderCatFlt(){
+  const cats=[...new Set(allStaff.map(s=>s.category).filter(Boolean))].sort();
+  const sel=document.getElementById('fC');if(!sel)return;const cur=sel.value;
+  sel.innerHTML='<option value="">All Categories</option>'+cats.map(c=>`<option${c===cur?' selected':''}>${c}</option>`).join('');
+}
+
+function renderTbl(){
+  renderCatFlt();
+  const filtered=getFiltered();const tot=filtered.length;
+  const tPg=Math.max(1,Math.ceil(tot/pPer));if(pgNum>tPg)pgNum=tPg;
+  const slice=filtered.slice((pgNum-1)*pPer,pgNum*pPer);
+  const isAdmin=CU?.role==='admin';
+  document.getElementById('tBody').innerHTML=slice.length?slice.map(s=>{
+    const qw=soon(s.qidexp),qx=xpd(s.qidexp),fw=soon(s.fhcexp),fx=xpd(s.fhcexp);
+    const qd=dL(s.qidexp),fd=dL(s.fhcexp);
+    const qCell=s.qidexp?`<span class="${qx?'exp-x':qw?'exp-w':'exp-ok'}">${(qx||qw)?'⚠ ':''}${fmtD(s.qidexp)}${qx?' (EXPIRED)':qw?` (${qd}d)`:''}</span>`:'<span style="color:var(--text3)">—</span>';
+    const fCell=s.fhcexp?`<span class="${fx?'exp-x':fw?'exp-w':'exp-ok'}">${(fx||fw)?'⚠ ':''}${fmtD(s.fhcexp)}${fx?' (EXPIRED)':fw?` (${fd}d)`:''}</span>`:'<span style="color:var(--text3)">—</span>';
+    const qUrl=s.qidImgUrl||'';const fUrl=s.fhcImgUrl||'';const sUrl=s.staffImgUrl||'';
+    const qImg=qUrl?`<img class="thumb" src="${qUrl}" onclick="showLbox('${qUrl}')" alt="QID">`:`<div class="no-img" title="No QID image">🪪</div>`;
+    const fImg=fUrl?`<img class="thumb" src="${fUrl}" onclick="showLbox('${fUrl}')" alt="FHC">`:`<div class="no-img" title="No FHC photo">📄</div>`;
+    const sImg=sUrl?`<img class="thumb" src="${sUrl}" onclick="showLbox('${sUrl}')" alt="Photo">`:`<div class="no-img" title="No photo">👤</div>`;
+    const gB=s.gender==='Male'?`<span class="badge bm">Male</span>`:s.gender==='Female'?`<span class="badge bf">Female</span>`:`<span style="color:var(--text2);font-size:12px">${s.gender||'—'}</span>`;
+    const sid=String(s.id).replace(/'/g,'');
+    return `<tr id="row-${sid}">
+      <td><input type="checkbox" class="rChk" data-id="${sid}" onchange="updBulk()"></td>
+      <td style="font-weight:800;color:var(--text3)">${s.sr}</td>
+      <td style="font-weight:600;white-space:nowrap">${s.name}</td>
+      <td>${s.schedule||'—'}</td>
+      <td style="font-family:monospace;font-size:12.5px">${s.qid||'—'}</td>
+      <td>${qCell}</td><td>${gB}</td>
+      <td><span class="badge bc">${s.category||'—'}</span></td>
+      <td>${fImg}</td><td>${fCell}</td><td>${qImg}</td><td>${sImg}</td>
+      <td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);font-size:12px">${s.comment||'—'}</td>
+      <td><div class="row-acts">${isAdmin?`
+        <div class="iBtn" onclick="openEdit('${sid}')" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <div class="iBtn del" onclick="confirmDel('${sid}')" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></div>
+      `:`<span style="font-size:11px;color:var(--text3)">Read-only</span>`}</div></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="14"><div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><h3>No records found</h3><p>Adjust search or filters</p></div></td></tr>`;
+  const tPg2=Math.max(1,Math.ceil(tot/pPer));
+  const btns=[];for(let i=1;i<=tPg2;i++)btns.push(`<button class="pg-btn${i===pgNum?' cur':''}" onclick="goPg(${i})">${i}</button>`);
+  document.getElementById('pgBar').innerHTML=`<button class="pg-btn" onclick="goPg(${pgNum-1})" ${pgNum<=1?'disabled':''}>‹ Prev</button>${btns.slice(Math.max(0,pgNum-3),Math.min(tPg2,pgNum+2)).join('')}<button class="pg-btn" onclick="goPg(${pgNum+1})" ${pgNum>=tPg2?'disabled':''}>Next ›</button><span class="pg-info">${tot} record${tot!==1?'s':''} · Page ${pgNum}/${tPg2}</span>`;
+  updBulk();
+}
+
+function updBulk(){
+  const checked=[...document.querySelectorAll('.rChk:checked')];
+  document.getElementById('bulkBar').classList.toggle('show',checked.length>0);
+  document.getElementById('bulkCnt').textContent=checked.length;
+  document.querySelectorAll('.rChk').forEach(c=>{const r=document.getElementById('row-'+c.dataset.id);if(r)r.classList.toggle('sel-row',c.checked)});
+}
+window.updBulk = updBulk;
+
+function getSelIds(){return[...document.querySelectorAll('.rChk:checked')].map(c=>String(c.dataset.id))}
+
+// ═══════════════════════════════════════════════════════════════
+//  ADD / EDIT STAFF
+// ═══════════════════════════════════════════════════════════════
+function openAdd(){editId=null;clearForm();document.getElementById('staffMoTitle').textContent='Add Staff Member';document.getElementById('staffMo').style.display='flex'}
+window.openAdd = openAdd;
+
+function openEdit(id){
+  editId=String(id);
+  const s=allStaff.find(x=>String(x.id)===editId);if(!s)return;
+  document.getElementById('fn').value=s.name||'';
+  document.getElementById('fs').value=s.schedule||'';
+  document.getElementById('fq').value=s.qid||'';
+  document.getElementById('fqe').value=s.qidexp||'';
+  document.getElementById('fg_').value=s.gender||'';
+  document.getElementById('fcat').value=s.category||'';
+  document.getElementById('ffe').value=s.fhcexp||'';
+  document.getElementById('fcmt').value=s.comment||'';
+  setImg('qaPrev','qaArea',s.qidImgUrl||'');
+  setImg('faPrev','faArea',s.fhcImgUrl||'');
+  setImg('saPrev','saArea',s.staffImgUrl||'');
+  document.getElementById('staffMoTitle').textContent='Edit Staff Member';
+  document.getElementById('staffMo').style.display='flex';
+}
+window.openEdit = openEdit;
+
+function clearForm(){
+  ['fn','fs','fq','fqe','fg_','fcat','ffe','fcmt'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+  ['fqi','ffi','fsi'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+  setImg('qaPrev','qaArea','');setImg('faPrev','faArea','');setImg('saPrev','saArea','');
+}
+function closeStaffMo(){document.getElementById('staffMo').style.display='none'}
+window.closeStaffMo = closeStaffMo;
+
+async function saveStaff(){
+  const name=document.getElementById('fn').value.trim();
+  if(!name){toast('Name is required','err');return}
+  const saveBtn=document.getElementById('saveBtnMo');
+  saveBtn.disabled=true;saveBtn.textContent='Saving…';
+  try{
+    const id = editId || String(Date.now());
+    const existing = allStaff.find(x=>String(x.id)===String(id));
+    const maxSr = allStaff.length ? Math.max(...allStaff.map(x=>x.sr||0))+1 : 1;
+
+    const newQidB64   = getImg('qaPrev');
+    const newFhcB64   = getImg('faPrev');
+    const newStaffB64 = getImg('saPrev');
+
+    const qidImgUrl   = newQidB64   || existing?.qidImgUrl   || '';
+    const fhcImgUrl   = newFhcB64   || existing?.fhcImgUrl   || '';
+    const staffImgUrl = newStaffB64 || existing?.staffImgUrl || '';
+
+    const record={
+      id, sr: existing ? existing.sr : maxSr,
+      name,
+      schedule:  document.getElementById('fs').value.trim(),
+      qid:       document.getElementById('fq').value.trim(),
+      qidexp:    document.getElementById('fqe').value,
+      gender:    document.getElementById('fg_').value,
+      category:  document.getElementById('fcat').value.trim(),
+      fhcexp:    document.getElementById('ffe').value,
+      comment:   document.getElementById('fcmt').value.trim(),
+      qidImgUrl, fhcImgUrl, staffImgUrl
+    };
+
+    showLoad('Saving to Firestore…','Saving record');
+    await saveStaffDoc(record);
+    if(newQidB64||newFhcB64||newStaffB64){
+      await window._FB.saveImgs(id, newQidB64, newFhcB64, newStaffB64);
+    }
+
+    if(editId){const idx=allStaff.findIndex(x=>String(x.id)===String(editId));if(idx>-1)allStaff[idx]=record}
+    else allStaff.push(record);
+
+    await renumAndSaveAll();
+    hideLoad();closeStaffMo();renderAll();
+    toast(editId?'Record updated ✓':'Staff member added ✓','ok');
+  }catch(err){
+    hideLoad();console.error('Save error:',err);
+    toast('Error: '+err.message,'err');
+  }finally{
+    saveBtn.disabled=false;saveBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>Save Record';
+  }
+}
+window.saveStaff = saveStaff;
+
+// ═══════════════════════════════════════════════════════════════
+//  DELETE
+// ═══════════════════════════════════════════════════════════════
+function confirmDel(id){
+  const ids=id?[String(id)]:getSelIds();
+  if(!ids.length){toast('No staff selected','err');return}
+  const label=ids.length===1?'this record':ids.length+' selected records';
+  document.getElementById('confT').textContent='Delete '+label+'?';
+  document.getElementById('confM').textContent='This will permanently delete '+label+' from Firebase. Cannot be undone.';
+  document.getElementById('confMo').style.display='flex';
+  document.getElementById('confOk').onclick=async()=>{
+    closeConf();
+    showLoad('Deleting from Firebase…','');
+    try{
+      for(const did of ids) await deleteStaffDoc(String(did));
+      allStaff=allStaff.filter(x=>!ids.includes(String(x.id)));
+      await renumAndSaveAll();
+      clearSel();renderAll();
+      toast(label+' deleted ✓','ok');
+    }catch(e){toast('Delete error: '+e.message,'err')}
+    hideLoad();
+  };
+}
+window.confirmDel = confirmDel;
+function bulkDel(){const ids=getSelIds();if(!ids.length){toast('No staff selected','err');return}confirmDel(null)}
+window.bulkDel = bulkDel;
+function closeConf(){document.getElementById('confMo').style.display='none'}
+window.closeConf = closeConf;
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPIRY PAGE
+// ═══════════════════════════════════════════════════════════════
+function renderExpPage(){
+  const arr=allStaff;
+  const qW=arr.filter(s=>soon(s.qidexp)||xpd(s.qidexp)).sort((a,b)=>dL(a.qidexp)-dL(b.qidexp));
+  const fW=arr.filter(s=>soon(s.fhcexp)||xpd(s.fhcexp)).sort((a,b)=>dL(a.fhcexp)-dL(b.fhcexp));
+  const mk=(list,field,label)=>{
+    if(!list.length)return`<div style="color:var(--text3);font-size:13px;padding:1rem 0">✓ No ${label} alerts currently</div>`;
+    return`<div class="tbl-wrap" style="margin-bottom:1.4rem"><div class="tbl-scroll"><table><thead><tr><th>Sr #</th><th>Name</th><th>QID No.</th><th>Category</th><th>${label} Expiry</th><th>Days</th><th>Status</th></tr></thead><tbody>${list.map(s=>{const d=dL(s[field]);return`<tr><td style="font-weight:800;color:var(--text3)">${s.sr}</td><td style="font-weight:600">${s.name}</td><td style="font-family:monospace;font-size:12px">${s.qid||'—'}</td><td><span class="badge bc">${s.category||'—'}</span></td><td><span class="${d<0?'exp-x':'exp-w'}">⚠ ${fmtD(s[field])}</span></td><td><span class="${d<0?'exp-x':'exp-w'}">${d<0?'EXPIRED':d+' days'}</span></td><td><span class="${d<0?'exp-x':'exp-w'}">${d<0?'Immediate action required':'Renew within 30 days'}</span></td></tr>`}).join('')}</tbody></table></div></div>`;
+  };
+  document.getElementById('expContent').innerHTML=`
+    <div style="font-size:15px;font-weight:700;color:var(--red);margin:.5rem 0 .7rem">⚠ QID Expiry Alerts — ${qW.length} record${qW.length!==1?'s':''}</div>${mk(qW,'qidexp','QID')}
+    <div style="font-size:15px;font-weight:700;color:var(--red);margin:1.4rem 0 .7rem">⚠ FHC Expiry Alerts — ${fW.length} record${fW.length!==1?'s':''}</div>${mk(fW,'fhcexp','FHC')}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  IMPORT CSV
+// ═══════════════════════════════════════════════════════════════
+function parseDate(v){
+  if(!v)return'';v=v.trim();
+  let m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
+  return'';
+}
+function previewCSV(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{_csv=e.target.result;const lines=_csv.split('\n').filter(l=>l.trim());document.getElementById('csvMsg').innerHTML=`<span style="color:var(--green);font-weight:600">✓ File loaded:</span> "${f.name}" — <b>${lines.length-1}</b> data rows. Click <b>Import Records</b>.`};
+  r.readAsText(f);
+}
+window.previewCSV = previewCSV;
+
+async function doImport(){
+  if(!_csv){toast('Please select a CSV file first','err');return}
+  const lines=_csv.split('\n').filter(l=>l.trim());
+  if(lines.length<2){toast('CSV appears empty','err');return}
+  showLoad('Importing to Firebase…','Saving records…');
+  let added=0,skipped=0;
+  const sep=lines[0].includes(';')?';':',';
+  const maxSr=allStaff.length?Math.max(...allStaff.map(x=>x.sr||0)):0;
+  for(let i=1;i<lines.length;i++){
+    const parts=[];let cur='',inQ=false;
+    for(let j=0;j<lines[i].length;j++){const ch=lines[i][j];if(ch==='"'){inQ=!inQ}else if(ch===sep&&!inQ){parts.push(cur.trim());cur=''}else cur+=ch}
+    parts.push(cur.trim());
+    const name=(parts[0]||'').replace(/^"|"$/g,'');
+    if(!name){skipped++;continue}
+    const id=String(Date.now()+i);
+    const record={id,sr:maxSr+added+1,name,schedule:parts[1]||'',qid:parts[2]||'',qidexp:parseDate(parts[3]),gender:parts[4]||'',category:parts[5]||'',fhcexp:parseDate(parts[6]),comment:parts[7]||'',qidImgUrl:'',fhcImgUrl:'',staffImgUrl:''};
+    await saveStaffDoc(record);
+    allStaff.push(record);
+    added++;
+  }
+  await renumAndSaveAll();
+  _csv=null;document.getElementById('csvFile').value='';
+  document.getElementById('csvMsg').innerHTML=`<span style="color:var(--green);font-weight:700">✓ Done!</span> ${added} records imported${skipped?`, ${skipped} skipped`:''}.`;
+  hideLoad();renderAll();toast(`${added} records imported to Firebase ✓`,'ok');
+}
+window.doImport = doImport;
+
+function dlTemplate(){const csv=`Name,ScheduleName,QIDNumber,QIDExpiry,Gender,Category,FHCExpiry,Comment\nJohn Smith,John S,29012345678,31/12/2026,Male,Security,30/06/2026,Example\nMaria Garcia,Maria G,29087654321,15/03/2027,Female,Cleaner,10/01/2027,`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='PilotCompany_Staff_Template.csv';a.click();toast('Template downloaded','ok')}
+window.dlTemplate = dlTemplate;
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPORT — Excel with real photos fetched from Firebase Storage
+// ═══════════════════════════════════════════════════════════════
+function getExportData(sel){
+  if(sel){const ids=getSelIds();if(!ids.length){toast('No staff selected — tick checkboxes first','err');return null}return allStaff.filter(s=>ids.includes(String(s.id)))}
+  return getFiltered();
+}
+
+function exportXLSX(sel){
+  const data=getExportData(sel);if(!data||!data.length){if(data)toast('No records to export','err');return}
+  toast('Building Excel with real photos…','info');
+  if(typeof ExcelJS==='undefined'){
+    const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js';
+    sc.onload=()=>_buildExcel(data,sel);sc.onerror=()=>{toast('ExcelJS failed — opening Photo Report','err');openPhotoReport(data)};
+    document.head.appendChild(sc);
+  }else _buildExcel(data,sel);
+}
+window.exportXLSX = exportXLSX;
+
+async function imgUrlToBase64(url){
+  if(!url)return null;
+  try{
+    const resp=await fetch(url,{mode:'cors'});
+    const blob=await resp.blob();
+    return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(blob)});
+  }catch(e){
+    // Fallback: create img element and draw to canvas
+    return new Promise((res)=>{
+      const img=new Image();img.crossOrigin='anonymous';
+      img.onload=()=>{
+        try{
+          const cv=document.createElement('canvas');cv.width=img.width;cv.height=img.height;
+          cv.getContext('2d').drawImage(img,0,0);
+          res(cv.toDataURL('image/jpeg',0.7));
+        }catch(e2){res(null)}
+      };
+      img.onerror=()=>res(null);
+      img.src=url+'?t='+Date.now();
+    });
+  }
+}
+
+async function _buildExcel(data,sel){
+  showLoad('Building Excel…','Fetching photos from Firebase Storage');
+  try{
+    const today=new Date().toLocaleDateString('en-GB').replace(/\//g,'-');
+    const wb=new ExcelJS.Workbook();wb.creator='Pilot Company';wb.created=new Date();
+    const ws=wb.addWorksheet('Staff Records',{views:[{state:'frozen',ySplit:1}]});
+    ws.columns=[
+      {header:'Sr #',key:'sr',width:6},{header:'Name As Per QID',key:'name',width:28},
+      {header:'Schedule Name',key:'sch',width:22},{header:'QID Number',key:'qid',width:18},
+      {header:'QID Expiry',key:'qidexp',width:20},{header:'Gender',key:'gender',width:10},
+      {header:'Category',key:'cat',width:16},{header:'FHC Expiry',key:'fhcexp',width:20},
+      {header:'Comment',key:'cmt',width:28},{header:'QID Document',key:'qidimg',width:20},
+      {header:'FHC Photo',key:'fhcimg',width:20},{header:'Staff Photo',key:'staffimg',width:20},
+    ];
+    const hdr=ws.getRow(1);hdr.height=22;
+    hdr.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0B1F3A'}};c.font={bold:true,color:{argb:'FFFFFFFF'},size:11};c.alignment={vertical:'middle',horizontal:'center'};c.border={bottom:{style:'medium',color:{argb:'FFC9A03A'}}}});
+
+    for(let i=0;i<data.length;i++){
+      const s=data[i];const rowNum=i+2;
+      const qd=dL(s.qidexp),fd=dL(s.fhcexp);
+      const row=ws.addRow({
+        sr:s.sr||'',name:s.name||'',sch:s.schedule||'',qid:s.qid||'',
+        qidexp:s.qidexp?(qd<0?s.qidexp+' EXPIRED':soon(s.qidexp)?s.qidexp+' ('+qd+'d)':s.qidexp):'',
+        gender:s.gender||'',cat:s.category||'',
+        fhcexp:s.fhcexp?(fd<0?s.fhcexp+' EXPIRED':soon(s.fhcexp)?s.fhcexp+' ('+fd+'d)':s.fhcexp):'',
+        cmt:s.comment||'',
+        qidimg:s.qidImgUrl?'':'(no image)',fhcimg:s.fhcImgUrl?'':'(no photo)',staffimg:s.staffImgUrl?'':'(no photo)',
+      });
+      const hasImg=s.qidImgUrl||s.fhcImgUrl||s.staffImgUrl;
+      row.height=hasImg?90:18;
+      row.eachCell({includeEmpty:true},(cell,colNum)=>{
+        cell.alignment={vertical:'middle',horizontal:colNum<=9?'left':'center',wrapText:true};
+        cell.font={size:10};
+        if(i%2===0)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF7F9FF'}};
+        if(colNum===5&&(qd<0||soon(s.qidexp)))cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFDE8E8'}};
+        if(colNum===8&&(fd<0||soon(s.fhcexp)))cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFDE8E8'}};
+      });
+      // Embed photos
+      for(const [col,urlKey] of [[9,'qidImgUrl'],[10,'fhcImgUrl'],[11,'staffImgUrl']]){
+        if(s[urlKey]){
+          try{
+            const b64=await imgUrlToBase64(s[urlKey]);
+            if(b64){
+              const ext=b64.includes('png')?'png':'jpeg';
+              const imgId=wb.addImage({base64:b64.split(',')[1],extension:ext});
+              ws.addImage(imgId,{tl:{col,row:rowNum-1},br:{col:col+1,row:rowNum},editAs:'oneCell'});
+              row.getCell(col+1).value='';
+            }
+          }catch(e){console.warn('Image embed failed:',e)}
+        }
+      }
+    }
+    // Expiry sheet
+    const expArr=data.filter(s=>(soon(s.qidexp)||xpd(s.qidexp))||(soon(s.fhcexp)||xpd(s.fhcexp)));
+    if(expArr.length){
+      const ws2=wb.addWorksheet('Expiry Alerts');
+      ws2.columns=[{header:'Sr #',width:6},{header:'Name',width:28},{header:'QID No.',width:18},{header:'Category',width:16},{header:'QID Expiry',width:16},{header:'QID Status',width:22},{header:'FHC Expiry',width:16},{header:'FHC Status',width:22}];
+      ws2.getRow(1).eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0B1F3A'}};c.font={bold:true,color:{argb:'FFFFFFFF'}};c.alignment={vertical:'middle'}});
+      expArr.forEach(s=>{const qd=dL(s.qidexp),fd=dL(s.fhcexp);ws2.addRow([s.sr,s.name,s.qid,s.category,s.qidexp,s.qidexp?(qd<0?'EXPIRED':soon(s.qidexp)?'Exp in '+qd+'d':'OK'):'',s.fhcexp,s.fhcexp?(fd<0?'EXPIRED':soon(s.fhcexp)?'Exp in '+fd+'d':'OK'):'' ])});
+    }
+    // Summary sheet
+    const ws3=wb.addWorksheet('Summary');ws3.columns=[{width:32},{width:22}];
+    const cats={};allStaff.forEach(s=>{if(s.category)cats[s.category]=(cats[s.category]||0)+1});
+    [['PILOT COMPANY — STAFF DATABASE'],[''],['Generated',today],['By',CU?.username||''],['Records',data.length],[''],['Category','Count'],...Object.entries(cats).sort((a,b)=>b[1]-a[1]),[''],['Male',allStaff.filter(s=>s.gender==='Male').length],['Female',allStaff.filter(s=>s.gender==='Female').length],[''],['QID Alerts',allStaff.filter(s=>soon(s.qidexp)||xpd(s.qidexp)).length],['FHC Alerts',allStaff.filter(s=>soon(s.fhcexp)||xpd(s.fhcexp)).length],[''],['Powered by Bilal Javeed','']].forEach((r,i)=>{const row=ws3.addRow(r);if(i===0)row.getCell(1).font={bold:true,size:13,color:{argb:'FF0B1F3A'}}});
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='PilotCompany_Staff_'+today+(sel?'_Selected'+data.length:'')+'.xlsx';a.click();
+    hideLoad();toast('Excel downloaded with real photos ✓ ('+data.length+' records)','ok');
+  }catch(err){hideLoad();console.error('Excel error:',err);toast('Excel error — opening Photo Report','err');openPhotoReport(data)}
+}
+
+function openPhotoReport(data){
+  const wp=data.filter(s=>s.qidImgUrl||s.fhcImgUrl||s.staffImgUrl);
+  if(!wp.length){toast('No photos in selected records','err');return}
+  const rows=wp.map(s=>`<tr><td style="font-weight:700;text-align:center">${s.sr}</td><td><b>${s.name}</b><br><span style="color:#666;font-size:8.5pt">QID: ${s.qid||'—'}</span></td><td style="text-align:center">${s.category||''}</td><td style="text-align:center">${s.qidImgUrl?`<img src="${s.qidImgUrl}" style="max-width:120px;max-height:80px;border-radius:5px;border:1px solid #ddd">`:'—'}</td><td style="text-align:center">${s.fhcImgUrl?`<img src="${s.fhcImgUrl}" style="max-width:120px;max-height:80px;border-radius:5px;border:1px solid #ddd">`:'—'}</td><td style="text-align:center">${s.staffImgUrl?`<img src="${s.staffImgUrl}" style="width:65px;height:65px;border-radius:50%;object-fit:cover;border:2px solid #c9a03a">`:'—'}</td></tr>`).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Staff Photo Report</title><style>@page{size:A3 landscape;margin:10mm}body{font-family:Arial,sans-serif;font-size:10pt}.h{border-bottom:3px solid #c9a03a;padding-bottom:8px;margin-bottom:10px}.h h1{font-size:14pt;color:#0b1f3a;margin:0}.h p{color:#888;font-size:8.5pt}table{width:100%;border-collapse:collapse}th{background:#0b1f3a;color:#fff;padding:7px 9px;font-size:9pt;text-align:left}td{border:1px solid #e0e0e0;padding:7px 9px;vertical-align:middle}tr:nth-child(even){background:#f7f9ff}.pbtn{position:fixed;top:12px;right:16px;padding:9px 20px;background:linear-gradient(135deg,#c9a03a,#e8c060);color:#0b1f3a;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}@media print{.pbtn{display:none}}</style></head><body><button class="pbtn" onclick="window.print()">🖨 Print / PDF</button><div class="h"><h1>🏢 Pilot Company — Staff Photo Report</h1><p>${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})} · ${wp.length} records · Powered by Bilal Javeed</p></div><table><thead><tr><th>Sr</th><th>Name / QID</th><th>Category</th><th>QID Document</th><th>FHC Document</th><th>Staff Photo</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const w=window.open('','_blank');if(w){w.document.write(html);w.document.close()}else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='StaffPhotoReport.html';a.click()}
+}
+
+function exportPDF(sel){
+  const data=getExportData(sel);if(!data||!data.length){if(data)toast('No records','err');return}
+  const rows=data.map(s=>{const qw=soon(s.qidexp)||xpd(s.qidexp),fw=soon(s.fhcexp)||xpd(s.fhcexp);const qd=dL(s.qidexp),fd=dL(s.fhcexp);const qI=s.qidImgUrl?`<img src="${s.qidImgUrl}" style="max-width:70px;max-height:46px;border-radius:4px;border:1px solid #ddd">`:'—';const fI=s.fhcImgUrl?`<img src="${s.fhcImgUrl}" style="max-width:70px;max-height:46px;border-radius:4px;border:1px solid #ddd">`:'—';const sI=s.staffImgUrl?`<img src="${s.staffImgUrl}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #ddd">`:'—';return`<tr><td style="text-align:center;font-weight:700">${s.sr}</td><td><b>${s.name}</b><br><small>${s.schedule||''}</small></td><td style="font-family:monospace;font-size:8pt">${s.qid||''}</td><td style="${qw?'background:#fdd;color:#900;font-weight:bold':''}">${fmtD(s.qidexp)}${qw?`<br><b style="font-size:7pt">${qd<0?'EXPIRED':qd+'d'}</b>`:''}</td><td>${s.gender||''}</td><td>${s.category||''}</td><td style="${fw?'background:#fdd;color:#900;font-weight:bold':''}">${fmtD(s.fhcexp)}${fw?`<br><b style="font-size:7pt">${fd<0?'EXPIRED':fd+'d'}</b>`:''}</td><td style="text-align:center">${qI}</td><td style="text-align:center">${fI}</td><td style="text-align:center">${sI}</td><td style="font-size:8pt;color:#666">${s.comment||''}</td></tr>`;}).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Staff Report</title><style>@page{size:A3 landscape;margin:9mm}body{font-family:Arial,sans-serif;font-size:9pt}.h{border-bottom:3px solid #c9a03a;padding-bottom:7px;margin-bottom:9px}.h h1{font-size:13pt;color:#0b1f3a;margin:0}.h p{color:#888;font-size:8.5pt}table{width:100%;border-collapse:collapse}th{background:#0b1f3a;color:#fff;padding:6px 8px;font-size:8pt;text-align:left}td{border:1px solid #ddd;padding:5px 8px;vertical-align:middle}tr:nth-child(even){background:#f7f7f7}.pbtn{position:fixed;top:10px;right:14px;padding:7px 16px;background:#0b1f3a;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:600}@media print{.pbtn{display:none}}</style></head><body><button class="pbtn" onclick="window.print()">🖨 Print/PDF</button><div class="h"><h1>🏢 Pilot Company — Staff Report</h1><p>${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})} · ${data.length} records · Powered by Bilal Javeed</p></div><table><thead><tr><th>Sr</th><th>Name</th><th>QID No.</th><th>QID Expiry</th><th>Gender</th><th>Category</th><th>FHC Expiry</th><th>QID Image</th><th>FHC Photo</th><th>Staff Photo</th><th>Comment</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>{w.focus();w.print()},600)}toast('PDF report opened ✓','ok');
+}
+window.exportPDF = exportPDF;
+
+function exportWord(sel){
+  const data=getExportData(sel);if(!data||!data.length){if(data)toast('No records','err');return}
+  const today=new Date().toLocaleDateString('en-GB');
+  const rows=data.map(s=>{const qw=soon(s.qidexp)||xpd(s.qidexp),fw=soon(s.fhcexp)||xpd(s.fhcexp);const qI=s.qidImgUrl?`<img src="${s.qidImgUrl}" width="80" height="54" style="border-radius:4px;border:1px solid #ddd">`:'—';const fI=s.fhcImgUrl?`<img src="${s.fhcImgUrl}" width="80" height="54" style="border-radius:4px;border:1px solid #ddd">`:'—';const sI=s.staffImgUrl?`<img src="${s.staffImgUrl}" width="50" height="50" style="border-radius:50%;border:2px solid #ddd">`:'—';return`<tr><td style="text-align:center"><b>${s.sr}</b></td><td><b>${s.name}</b><br><small>${s.schedule||''}</small></td><td>${s.qid||''}</td><td style="${qw?'background:#fcc':''}">${fmtD(s.qidexp)}</td><td>${s.gender||''}</td><td>${s.category||''}</td><td style="${fw?'background:#fcc':''}">${fmtD(s.fhcexp)}</td><td style="text-align:center">${qI}</td><td style="text-align:center">${fI}</td><td style="text-align:center">${sI}</td><td><small>${s.comment||''}</small></td></tr>`;}).join('');
+  const html=`<html xmlns:o='urn:schemas-microsoft-com:office:office'><head><meta charset='utf-8'><style>body{font-family:Calibri,sans-serif;font-size:9pt}h1{font-size:13pt;color:#0b1f3a}table{border-collapse:collapse;width:100%}th{background:#0b1f3a;color:#fff;padding:5pt 7pt;font-size:8.5pt;text-align:left}td{border:1pt solid #ccc;padding:4pt 7pt;vertical-align:middle;font-size:8.5pt}</style></head><body><h1>Pilot Company — Staff Database</h1><p style="color:#888;font-size:8.5pt">Date: ${today} | Records: ${data.length} | Powered by Bilal Javeed</p><table><thead><tr><th>Sr</th><th>Name</th><th>QID No</th><th>QID Expiry</th><th>Gender</th><th>Category</th><th>FHC Expiry</th><th>QID Image</th><th>FHC Photo</th><th>Staff Photo</th><th>Comment</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'application/msword'}));a.download='PilotCompany_Staff_'+today.replace(/\//g,'-')+'.doc';a.click();toast('Word document downloaded ✓','ok');
+}
+window.exportWord = exportWord;
+
+// ═══════════════════════════════════════════════════════════════
+//  USER MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+function renderUsers(){
+  document.getElementById('usersList').innerHTML=getUsers().map(u=>`
+    <div class="ucard">
+      <div class="sb-av" style="width:36px;height:36px">${u.username[0].toUpperCase()}</div>
+      <div><strong style="font-size:14px">${u.username}</strong><div style="font-size:12px;color:var(--text2)">ID: ${u.id}</div></div>
+      <span class="rbadge ${u.role==='admin'?'r-admin':'r-view'}">${u.role==='admin'?'Administrator':'Viewer'}</span>
+      ${u.username!=='admin'?`
+        <div class="iBtn" onclick="openEditUser(${u.id})" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <div class="iBtn del" onclick="delUser(${u.id})" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></div>
+      `:'<span style="font-size:11px;color:var(--text3)">Protected</span>'}
+    </div>`).join('');
+}
+function openAddUser(){editUid=null;document.getElementById('uun').value='';document.getElementById('upw').value='';document.getElementById('url').value='viewer';document.getElementById('userMoTitle').textContent='Add User';document.getElementById('userMo').style.display='flex'}
+function openEditUser(id){editUid=id;const u=getUsers().find(x=>x.id===id);if(!u)return;document.getElementById('uun').value=u.username;document.getElementById('upw').value=u.password;document.getElementById('url').value=u.role;document.getElementById('userMoTitle').textContent='Edit User';document.getElementById('userMo').style.display='flex'}
+function closeUserMo(){document.getElementById('userMo').style.display='none'}
+function saveUser(){const n=document.getElementById('uun').value.trim(),p=document.getElementById('upw').value.trim(),r=document.getElementById('url').value;if(!n||!p){toast('Username and password required','err');return}let u=getUsers();if(editUid){const idx=u.findIndex(x=>x.id===editUid);if(idx>-1)u[idx]={...u[idx],username:n,password:p,role:r}}else{if(u.find(x=>x.username===n)){toast('Username already exists','err');return}u.push({id:Date.now(),username:n,password:p,role:r})}saveUsers(u);closeUserMo();renderUsers();toast(editUid?'User updated ✓':'User added ✓','ok')}
+function delUser(id){if(!confirm('Delete this user?'))return;saveUsers(getUsers().filter(x=>x.id!==id));renderUsers();toast('User deleted','ok')}
+window.openAddUser=openAddUser;window.openEditUser=openEditUser;window.closeUserMo=closeUserMo;window.saveUser=saveUser;window.delUser=delUser;
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDER ALL + BOOT
+// ═══════════════════════════════════════════════════════════════
+function renderAll(){renderDash();renderCatFlt();renderTbl()}
+
+// ── BOOT — called once Firebase ESM module signals ready ──
+function _boot(){
+  if(!window._FB){
+    // Wait a moment and retry once
+    setTimeout(()=>{
+      if(window._FB){ _boot(); }
+      else {
+        document.getElementById('loadingTitle').textContent='Firebase Not Ready';
+        document.getElementById('loadingMsg').textContent='Please refresh the page (Ctrl+R).';
+      }
+    }, 2000);
+    return;
+  }
+  // Update sidebar Firebase indicator
+  const sd=document.getElementById('sbFbDot');
+  const st=document.getElementById('sbFbTxt');
+  if(sd) sd.className='fb-dot ok';
+  if(st) st.textContent='Firebase Connected ✓';
+  hideLoad();
+  document.getElementById('loginWrap').style.display='flex';
+  setTimeout(()=>{const u=document.getElementById('lU');if(u)u.focus()},120);
+}
+// Called by module when ready
+window._onFbReady = function(){ _boot(); };
+
+</script>
+
+<!-- ═══ FIREBASE MODULE — Firestore only, NO Storage needed ═══ -->
+<script type="module">
+import { initializeApp }
+  from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, orderBy, getDoc }
+  from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+
+const CFG = {
+  apiKey:            "AIzaSyBOrNDwCB7zhwrvycU1TCb1024WVj-HUVk",
+  authDomain:        "pilotcompanystaff.firebaseapp.com",
+  projectId:         "pilotcompanystaff",
+  storageBucket:     "pilotcompanystaff.firebasestorage.app",
+  messagingSenderId: "823897367388",
+  appId:             "1:823897367388:web:6d13097f676f36fdbc1799"
+};
+
+function setStatus(t,m){
+  const te=document.getElementById('loadingTitle');
+  const me=document.getElementById('loadingMsg');
+  if(te&&t)te.textContent=t;
+  if(me&&m)me.textContent=m;
+}
+
+try{
+  setStatus('Connecting to Firebase…','Initialising Firestore');
+  const fbApp=initializeApp(CFG);
+  const FS=getFirestore(fbApp);
+
+  // Images stored as base64 chunks in Firestore (900KB per chunk)
+  const CHUNK=900000;
+
+  async function saveImgChunks(staffId,field,b64){
+    if(!b64)return;
+    // Delete old chunks
+    for(let i=0;i<10;i++){
+      try{await deleteDoc(doc(FS,'img_'+field,staffId+'_'+i))}catch(e){}
+    }
+    // Write new chunks
+    const chunks=[];
+    for(let i=0;i<b64.length;i+=CHUNK) chunks.push(b64.slice(i,i+CHUNK));
+    for(let i=0;i<chunks.length;i++){
+      await setDoc(doc(FS,'img_'+field,staffId+'_'+i),
+        {data:chunks[i],idx:i,total:chunks.length,staffId});
+    }
+  }
+
+  async function loadImgChunks(staffId,field){
+    try{
+      const s0=await getDoc(doc(FS,'img_'+field,staffId+'_0'));
+      if(!s0.exists())return '';
+      const total=s0.data().total;
+      if(total===1)return s0.data().data;
+      const parts=[s0.data().data];
+      for(let i=1;i<total;i++){
+        const s=await getDoc(doc(FS,'img_'+field,staffId+'_'+i));
+        if(s.exists())parts.push(s.data().data);
+      }
+      return parts.join('');
+    }catch(e){return ''}
+  }
+
+  window._FB={
+
+    async loadStaff(){
+      setStatus('Loading staff records…','Fetching from Firestore');
+      const snap=await getDocs(query(collection(FS,'staff'),orderBy('sr','asc')));
+      const arr=[];
+      snap.forEach(d=>arr.push({id:d.id,...d.data()}));
+      // Load images for each staff member
+      for(let i=0;i<arr.length;i++){
+        const s=arr[i];
+        setStatus('Loading photos… ('+(i+1)+'/'+arr.length+')','');
+        if(s.hasQid)   s.qidImgUrl  =await loadImgChunks(s.id,'qid');
+        if(s.hasFhc)   s.fhcImgUrl  =await loadImgChunks(s.id,'fhc');
+        if(s.hasStaff) s.staffImgUrl=await loadImgChunks(s.id,'staff');
+      }
+      return arr;
+    },
+
+    async saveDoc(s){
+      await setDoc(doc(FS,'staff',String(s.id)),{
+        sr:s.sr||0, name:s.name||'', schedule:s.schedule||'',
+        qid:s.qid||'', qidexp:s.qidexp||'', gender:s.gender||'',
+        category:s.category||'', fhcexp:s.fhcexp||'', comment:s.comment||'',
+        hasQid:!!(s.qidImgUrl), hasFhc:!!(s.fhcImgUrl), hasStaff:!!(s.staffImgUrl),
+        updatedAt:new Date().toISOString()
+      });
+    },
+
+    async saveImgs(staffId,qidB64,fhcB64,staffB64){
+      if(qidB64){
+        setStatus('Saving QID Image…','Storing in Firestore');
+        await saveImgChunks(staffId,'qid',qidB64);
+      }
+      if(fhcB64){
+        setStatus('Saving FHC Photo…','Storing in Firestore');
+        await saveImgChunks(staffId,'fhc',fhcB64);
+      }
+      if(staffB64){
+        setStatus('Saving Staff Photo…','Storing in Firestore');
+        await saveImgChunks(staffId,'staff',staffB64);
+      }
+    },
+
+    async deleteDoc(id){
+      await deleteDoc(doc(FS,'staff',String(id)));
+      for(const f of ['qid','fhc','staff']){
+        for(let i=0;i<10;i++){
+          try{await deleteDoc(doc(FS,'img_'+f,id+'_'+i))}catch(e){}
+        }
+      }
+    }
+  };
+
+  // Signal ready
+  const dot=document.getElementById('fbDot');
+  const txt=document.getElementById('fbStatusTxt');
+  if(dot)dot.className='fb-dot ok';
+  if(txt){txt.textContent='Firebase connected ✓';txt.style.color='rgba(39,174,96,.8)';}
+  window._fbReady=true;
+  if(typeof _boot==='function')_boot();
+
+}catch(err){
+  console.error('Firebase error:',err);
+  const dot=document.getElementById('fbDot');
+  if(dot)dot.className='fb-dot err';
+  setStatus('Firebase Error',err.message);
+}
+</script>
+
+<script>
+// Boot coordinator
+window._onFbReady=function(){if(typeof _boot==='function')_boot();};
+if(window._fbReady&&typeof _boot==='function')_boot();
+setTimeout(function(){
+  if(!window._fbReady){
+    document.getElementById('loadingTitle').textContent='Still connecting…';
+    document.getElementById('loadingMsg').textContent='Check internet and refresh.';
+  }
+},15000);
+</script>
+
+</body>
+</html>
