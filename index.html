@@ -123,7 +123,8 @@ button{font-family:inherit;cursor:pointer;border:none}input,select,textarea{font
 
 /* TABLE */
 .tbl-wrap{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden;box-shadow:var(--sh)}
-.tbl-scroll{overflow-x:auto}
+.tbl-scroll{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 320px)}
+#pg-staff thead th{position:sticky;top:0;z-index:2}
 table{width:100%;border-collapse:collapse;min-width:1100px}
 thead{background:linear-gradient(90deg,#0b1f3a,#1a3a6c)}
 thead th{padding:11px 12px;font-size:11.5px;font-weight:600;color:rgba(255,255,255,.82);text-align:left;white-space:nowrap}
@@ -468,7 +469,8 @@ const firebaseConfig = {
 // ═══════════════════════════════════════════════════════════════
 let CU = null;
 let allStaff = [];
-let pgNum=1, pPer=15, sKey='sr', sDir=1;
+let pgNum=1, pPer=100000, sKey='sr', sDir=1;
+let selIds=new Set(); // persists selected staff IDs across pages/filters
 let editId=null, editUid=null, _csv=null;
 
 // ═══════════════════════════════════════════════════════════════
@@ -721,8 +723,23 @@ function getFiltered(){
 }
 window.doSort = (k)=>{sKey===k?sDir=-sDir:(sKey=k,sDir=1);renderTbl()};
 window.goPg   = (p)=>{pgNum=p;renderTbl()};
-window.toggleAll = (cb)=>{document.querySelectorAll('.rChk').forEach(c=>c.checked=cb.checked);updBulk()};
-window.clearSel  = ()=>{document.querySelectorAll('.rChk').forEach(c=>c.checked=false);const sa=document.getElementById('selAll');if(sa)sa.checked=false;updBulk()};
+window.toggleAll = (cb)=>{
+  document.querySelectorAll('.rChk').forEach(c=>{
+    c.checked=cb.checked;
+    if(cb.checked) selIds.add(c.dataset.id); else selIds.delete(c.dataset.id);
+  });
+  updBulk();
+};
+window.clearSel  = ()=>{
+  selIds.clear();
+  document.querySelectorAll('.rChk').forEach(c=>c.checked=false);
+  const sa=document.getElementById('selAll');if(sa)sa.checked=false;
+  updBulk();
+};
+window.toggleRow = (id,checked)=>{
+  if(checked) selIds.add(id); else selIds.delete(id);
+  updBulk();
+};
 
 function renderCatFlt(){
   const cats=[...new Set(allStaff.map(s=>s.category).filter(Boolean))].sort();
@@ -748,7 +765,7 @@ function renderTbl(){
     const gB=s.gender==='Male'?`<span class="badge bm">Male</span>`:s.gender==='Female'?`<span class="badge bf">Female</span>`:`<span style="color:var(--text2);font-size:12px">${s.gender||'—'}</span>`;
     const sid=String(s.id).replace(/'/g,'');
     return `<tr id="row-${sid}">
-      <td><input type="checkbox" class="rChk" data-id="${sid}" onchange="updBulk()"></td>
+      <td><input type="checkbox" class="rChk" data-id="${sid}" ${selIds.has(sid)?'checked':''} onchange="toggleRow('${sid}',this.checked)"></td>
       <td style="font-weight:800;color:var(--text3)">${s.sr}</td>
       <td style="font-weight:600;white-space:nowrap">${s.name}</td>
       <td>${s.schedule||'—'}</td>
@@ -763,21 +780,24 @@ function renderTbl(){
       `:`<span style="font-size:11px;color:var(--text3)">Read-only</span>`}</div></td>
     </tr>`;
   }).join(''):`<tr><td colspan="14"><div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><h3>No records found</h3><p>Adjust search or filters</p></div></td></tr>`;
-  const tPg2=Math.max(1,Math.ceil(tot/pPer));
-  const btns=[];for(let i=1;i<=tPg2;i++)btns.push(`<button class="pg-btn${i===pgNum?' cur':''}" onclick="goPg(${i})">${i}</button>`);
-  document.getElementById('pgBar').innerHTML=`<button class="pg-btn" onclick="goPg(${pgNum-1})" ${pgNum<=1?'disabled':''}>‹ Prev</button>${btns.slice(Math.max(0,pgNum-3),Math.min(tPg2,pgNum+2)).join('')}<button class="pg-btn" onclick="goPg(${pgNum+1})" ${pgNum>=tPg2?'disabled':''}>Next ›</button><span class="pg-info">${tot} record${tot!==1?'s':''} · Page ${pgNum}/${tPg2}</span>`;
+  document.getElementById('pgBar').innerHTML=`<span class="pg-info" style="margin-left:0">${tot} record${tot!==1?'s':''} loaded — scroll to see all</span>`;
   updBulk();
 }
 
 function updBulk(){
-  const checked=[...document.querySelectorAll('.rChk:checked')];
-  document.getElementById('bulkBar').classList.toggle('show',checked.length>0);
-  document.getElementById('bulkCnt').textContent=checked.length;
-  document.querySelectorAll('.rChk').forEach(c=>{const r=document.getElementById('row-'+c.dataset.id);if(r)r.classList.toggle('sel-row',c.checked)});
+  document.getElementById('bulkBar').classList.toggle('show',selIds.size>0);
+  document.getElementById('bulkCnt').textContent=selIds.size;
+  const boxes=[...document.querySelectorAll('.rChk')];
+  boxes.forEach(c=>{
+    c.checked=selIds.has(c.dataset.id);
+    const r=document.getElementById('row-'+c.dataset.id);if(r)r.classList.toggle('sel-row',c.checked);
+  });
+  const sa=document.getElementById('selAll');
+  if(sa) sa.checked=boxes.length>0&&boxes.every(c=>selIds.has(c.dataset.id));
 }
 window.updBulk = updBulk;
 
-function getSelIds(){return[...document.querySelectorAll('.rChk:checked')].map(c=>String(c.dataset.id))}
+function getSelIds(){return[...selIds]}
 
 // ═══════════════════════════════════════════════════════════════
 //  ADD / EDIT STAFF
