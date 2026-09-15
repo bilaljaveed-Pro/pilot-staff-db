@@ -315,6 +315,7 @@ td{padding:9px 12px;font-size:13px;vertical-align:middle}
         </div>
         <div class="bulk-bar" id="bulkBar">
           <span class="bulk-cnt" id="bulkCnt">0</span><span style="color:rgba(255,255,255,.8);font-size:13px;font-weight:500">staff selected</span>
+          <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.25)" onclick="openColMo()">🧾 Columns</button>
           <button class="btn btn-green btn-sm" onclick="exportXLSX(true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Excel + Photos</button>
           <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.25)" onclick="exportPDF(true)">PDF</button>
           <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.25)" onclick="exportWord(true)">Word</button>
@@ -323,6 +324,7 @@ td{padding:9px 12px;font-size:13px;vertical-align:middle}
         </div>
         <div style="display:flex;gap:7px;margin-bottom:.9rem;flex-wrap:wrap;align-items:center">
           <span style="font-size:12px;color:var(--text3)">Export All/Filtered:</span>
+          <button class="btn btn-outline btn-sm" onclick="openColMo()">🧾 Columns</button>
           <button class="btn btn-green btn-sm" onclick="exportXLSX(false)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Excel (.xlsx) with Photos</button>
           <button class="btn btn-outline btn-sm" onclick="exportPDF(false)">PDF Print</button>
           <button class="btn btn-outline btn-sm" onclick="exportWord(false)">Word (.doc)</button>
@@ -442,6 +444,18 @@ td{padding:9px 12px;font-size:13px;vertical-align:middle}
   </div>
 </div>
 
+<!-- COLUMN SELECTOR MODAL -->
+<div class="mo" id="colMo" style="display:none" onclick="if(event.target===this)closeColMo()">
+  <div class="mo-box" style="max-width:420px">
+    <div class="mo-hdr"><h2>Select Export Columns</h2><div class="mo-cls" onclick="closeColMo()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div>
+    <div class="mo-body">
+      <p style="font-size:12.5px;color:var(--text2);margin-bottom:12px;line-height:1.5">Choose which columns to include in Excel, PDF and Word downloads. <b>QID Expiry</b> and <b>FHC Expiry</b> are always included, shown as a plain date (DD-MM-YYYY) with no extra text.</p>
+      <div id="colList" style="display:flex;flex-direction:column;gap:9px"></div>
+    </div>
+    <div class="mo-foot"><button class="btn btn-outline" onclick="closeColMo()">Cancel</button><button class="btn btn-navy" onclick="saveCols()">Apply</button></div>
+  </div>
+</div>
+
 <!-- LIGHTBOX -->
 <div class="lbox" id="lbox" style="display:none" onclick="this.style.display='none'"><img id="lboxImg" src="" alt=""></div>
 <div id="toast"></div>
@@ -487,6 +501,7 @@ if(!localStorage.getItem('pc_users')) saveUsers(getUsers());
 //  HELPERS
 // ═══════════════════════════════════════════════════════════════
 function fmtD(d){if(!d)return'—';try{return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}catch(e){return d}}
+function fmtDExport(d){if(!d)return'';try{const dt=new Date(d+'T00:00:00');const dd=String(dt.getDate()).padStart(2,'0');const mm=String(dt.getMonth()+1).padStart(2,'0');return`${dd}-${mm}-${dt.getFullYear()}`}catch(e){return d}}
 function dL(d){if(!d)return 9999;return Math.ceil((new Date(d+'T00:00:00')-new Date())/86400000)}
 function soon(d){const n=dL(d);return n>=0&&n<=31}
 function xpd(d){return dL(d)<0}
@@ -978,6 +993,51 @@ function dlTemplate(){const csv=`Name,ScheduleName,QIDNumber,QIDExpiry,Gender,Ca
 window.dlTemplate = dlTemplate;
 
 // ═══════════════════════════════════════════════════════════════
+//  EXPORT COLUMN SELECTION
+// ═══════════════════════════════════════════════════════════════
+const EXPORT_COL_DEFS=[
+  {key:'sr',     label:'Sr #',                     always:false},
+  {key:'name',   label:'Name (As Per QID)',         always:false},
+  {key:'sch',    label:'Schedule Name',             always:false},
+  {key:'qid',    label:'QID Number',                always:false},
+  {key:'qidexp', label:'QID Expiry',                always:true},
+  {key:'gender', label:'Gender',                    always:false},
+  {key:'cat',    label:'Category',                  always:false},
+  {key:'fhcexp', label:'FHC Expiry',                always:true},
+  {key:'cmt',    label:'Comment',                   always:false},
+  {key:'qidimg', label:'QID Image',                 always:false},
+  {key:'fhcimg', label:'FHC Photo',                 always:false},
+  {key:'staffimg',label:'Staff Photo',               always:false},
+];
+function loadExportCols(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('pc_exportCols'));
+    if(saved)return saved;
+  }catch(e){}
+  const d={};EXPORT_COL_DEFS.forEach(c=>d[c.key]=true);return d;
+}
+let exportCols=loadExportCols();
+function isColOn(key){const def=EXPORT_COL_DEFS.find(c=>c.key===key);return(def&&def.always)||!!exportCols[key]}
+function renderColList(){
+  document.getElementById('colList').innerHTML=EXPORT_COL_DEFS.map(c=>`
+    <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--text);${c.always?'opacity:.6':''}">
+      <input type="checkbox" data-colkey="${c.key}" ${isColOn(c.key)?'checked':''} ${c.always?'disabled':''} style="width:16px;height:16px">
+      ${c.label}${c.always?' <span style="font-size:11px;color:var(--text3)">(always included)</span>':''}
+    </label>`).join('');
+}
+function openColMo(){renderColList();document.getElementById('colMo').style.display='flex'}
+window.openColMo=openColMo;
+function closeColMo(){document.getElementById('colMo').style.display='none'}
+window.closeColMo=closeColMo;
+function saveCols(){
+  document.querySelectorAll('#colList input[type=checkbox]').forEach(cb=>{exportCols[cb.dataset.colkey]=cb.checked});
+  localStorage.setItem('pc_exportCols',JSON.stringify(exportCols));
+  closeColMo();
+  toast('Column selection saved ✓','ok');
+}
+window.saveCols=saveCols;
+
+// ═══════════════════════════════════════════════════════════════
 //  EXPORT — Excel with real photos fetched from Firebase Storage
 // ═══════════════════════════════════════════════════════════════
 function getExportData(sel){
@@ -1025,45 +1085,65 @@ async function _buildExcel(data,sel){
     const today=new Date().toLocaleDateString('en-GB').replace(/\//g,'-');
     const wb=new ExcelJS.Workbook();wb.creator='Pilot Company';wb.created=new Date();
     const ws=wb.addWorksheet('Staff Records',{views:[{state:'frozen',ySplit:1}]});
-    ws.columns=[
-      {header:'Sr #',key:'sr',width:6},{header:'Name As Per QID',key:'name',width:28},
-      {header:'Schedule Name',key:'sch',width:22},{header:'QID Number',key:'qid',width:18},
-      {header:'QID Expiry',key:'qidexp',width:20},{header:'Gender',key:'gender',width:10},
-      {header:'Category',key:'cat',width:16},{header:'FHC Expiry',key:'fhcexp',width:20},
-      {header:'Comment',key:'cmt',width:28},{header:'QID Document',key:'qidimg',width:20},
-      {header:'FHC Photo',key:'fhcimg',width:20},{header:'Staff Photo',key:'staffimg',width:20},
+    const colDefs=[
+      {key:'sr',      header:'Sr #',              width:6},
+      {key:'name',    header:'Name As Per QID',   width:28},
+      {key:'sch',     header:'Schedule Name',     width:22},
+      {key:'qid',     header:'QID Number',        width:18},
+      {key:'qidexp',  header:'QID Expiry',        width:16},
+      {key:'gender',  header:'Gender',            width:10},
+      {key:'cat',     header:'Category',          width:16},
+      {key:'fhcexp',  header:'FHC Expiry',        width:16},
+      {key:'cmt',     header:'Comment',           width:28},
+      {key:'qidimg',  header:'QID Document',      width:20},
+      {key:'fhcimg',  header:'FHC Photo',         width:20},
+      {key:'staffimg',header:'Staff Photo',       width:20},
     ];
+    const activeCols=colDefs.filter(c=>isColOn(c.key));
+    ws.columns=activeCols.map(c=>({header:c.header,key:c.key,width:c.width}));
     const hdr=ws.getRow(1);hdr.height=22;
     hdr.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0B1F3A'}};c.font={bold:true,color:{argb:'FFFFFFFF'},size:11};c.alignment={vertical:'middle',horizontal:'center'};c.border={bottom:{style:'medium',color:{argb:'FFC9A03A'}}}});
 
+    const imgCols=['qidimg','fhcimg','staffimg'];
     for(let i=0;i<data.length;i++){
       const s=data[i];const rowNum=i+2;
-      const qd=dL(s.qidexp),fd=dL(s.fhcexp);
-      const row=ws.addRow({
-        sr:s.sr||'',name:s.name||'',sch:s.schedule||'',qid:s.qid||'',
-        qidexp:s.qidexp?(qd<0?s.qidexp+' EXPIRED':soon(s.qidexp)?s.qidexp+' ('+qd+'d)':s.qidexp):'',
-        gender:s.gender||'',cat:s.category||'',
-        fhcexp:s.fhcexp?(fd<0?s.fhcexp+' EXPIRED':soon(s.fhcexp)?s.fhcexp+' ('+fd+'d)':s.fhcexp):'',
-        cmt:s.comment||'',
-        qidimg:s.qidImgUrl?'':'(no image)',fhcimg:s.fhcImgUrl?'':'(no photo)',staffimg:s.staffImgUrl?'':'(no photo)',
+      const rowData={};
+      activeCols.forEach(c=>{
+        switch(c.key){
+          case 'sr': rowData.sr=s.sr||''; break;
+          case 'name': rowData.name=s.name||''; break;
+          case 'sch': rowData.sch=s.schedule||''; break;
+          case 'qid': rowData.qid=s.qid||''; break;
+          case 'qidexp': rowData.qidexp=fmtDExport(s.qidexp); break;
+          case 'gender': rowData.gender=s.gender||''; break;
+          case 'cat': rowData.cat=s.category||''; break;
+          case 'fhcexp': rowData.fhcexp=fmtDExport(s.fhcexp); break;
+          case 'cmt': rowData.cmt=s.comment||''; break;
+          case 'qidimg': rowData.qidimg=s.qidImgUrl?'':'(no image)'; break;
+          case 'fhcimg': rowData.fhcimg=s.fhcImgUrl?'':'(no photo)'; break;
+          case 'staffimg': rowData.staffimg=s.staffImgUrl?'':'(no photo)'; break;
+        }
       });
-      const hasImg=s.qidImgUrl||s.fhcImgUrl||s.staffImgUrl;
+      const row=ws.addRow(rowData);
+      const hasImg=imgCols.some(k=>isColOn(k)&&s[k==='qidimg'?'qidImgUrl':k==='fhcimg'?'fhcImgUrl':'staffImgUrl']);
       row.height=hasImg?160:18;
       row.eachCell({includeEmpty:true},(cell,colNum)=>{
-        cell.alignment={vertical:'middle',horizontal:colNum<=9?'left':'center',wrapText:true};
+        const colKey=activeCols[colNum-1]?.key;
+        cell.alignment={vertical:'middle',horizontal:imgCols.includes(colKey)?'center':'left',wrapText:true};
         cell.font={size:10};
         if(i%2===0)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF7F9FF'}};
-        if(colNum===5&&(qd<0||soon(s.qidexp)))cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFDE8E8'}};
-        if(colNum===8&&(fd<0||soon(s.fhcexp)))cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFDE8E8'}};
       });
-      // Embed photos
-      for(const [col,urlKey] of [[9,'qidImgUrl'],[10,'fhcImgUrl'],[11,'staffImgUrl']]){
+      // Embed photos (only for columns that are selected)
+      for(const key of imgCols){
+        if(!isColOn(key))continue;
+        const urlKey=key==='qidimg'?'qidImgUrl':key==='fhcimg'?'fhcImgUrl':'staffImgUrl';
         if(s[urlKey]){
           try{
             const b64=await imgUrlToBase64(s[urlKey]);
             if(b64){
               const ext=b64.includes('png')?'png':'jpeg';
               const imgId=wb.addImage({base64:b64.split(',')[1],extension:ext});
+              const col=activeCols.findIndex(c=>c.key===key);
               ws.addImage(imgId,{tl:{col,row:rowNum-1},br:{col:col+1,row:rowNum},editAs:'oneCell'});
               row.getCell(col+1).value='';
             }
@@ -1075,9 +1155,9 @@ async function _buildExcel(data,sel){
     const expArr=data.filter(s=>(soon(s.qidexp)||xpd(s.qidexp))||(soon(s.fhcexp)||xpd(s.fhcexp)));
     if(expArr.length){
       const ws2=wb.addWorksheet('Expiry Alerts');
-      ws2.columns=[{header:'Sr #',width:6},{header:'Name',width:28},{header:'QID No.',width:18},{header:'Category',width:16},{header:'QID Expiry',width:16},{header:'QID Status',width:22},{header:'FHC Expiry',width:16},{header:'FHC Status',width:22}];
+      ws2.columns=[{header:'Sr #',width:6},{header:'Name',width:28},{header:'QID No.',width:18},{header:'Category',width:16},{header:'QID Expiry',width:16},{header:'FHC Expiry',width:16}];
       ws2.getRow(1).eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0B1F3A'}};c.font={bold:true,color:{argb:'FFFFFFFF'}};c.alignment={vertical:'middle'}});
-      expArr.forEach(s=>{const qd=dL(s.qidexp),fd=dL(s.fhcexp);ws2.addRow([s.sr,s.name,s.qid,s.category,s.qidexp,s.qidexp?(qd<0?'EXPIRED':soon(s.qidexp)?'Exp in '+qd+'d':'OK'):'',s.fhcexp,s.fhcexp?(fd<0?'EXPIRED':soon(s.fhcexp)?'Exp in '+fd+'d':'OK'):'' ])});
+      expArr.forEach(s=>{ws2.addRow([s.sr,s.name,s.qid,s.category,fmtDExport(s.qidexp),fmtDExport(s.fhcexp)])});
     }
     // Summary sheet
     const ws3=wb.addWorksheet('Summary');ws3.columns=[{width:32},{width:22}];
@@ -1100,8 +1180,24 @@ function openPhotoReport(data){
 
 function exportPDF(sel){
   const data=getExportData(sel);if(!data||!data.length){if(data)toast('No records','err');return}
-  const rows=data.map(s=>{const qw=soon(s.qidexp)||xpd(s.qidexp),fw=soon(s.fhcexp)||xpd(s.fhcexp);const qd=dL(s.qidexp),fd=dL(s.fhcexp);const qI=s.qidImgUrl?`<img src="${s.qidImgUrl}" style="max-width:130px;max-height:90px;border-radius:4px;border:1px solid #ddd">`:'—';const fI=s.fhcImgUrl?`<img src="${s.fhcImgUrl}" style="max-width:130px;max-height:90px;border-radius:4px;border:1px solid #ddd">`:'—';const sI=s.staffImgUrl?`<img src="${s.staffImgUrl}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #ddd">`:'—';return`<tr><td style="text-align:center;font-weight:700">${s.sr}</td><td><b>${s.name}</b><br><small>${s.schedule||''}</small></td><td style="font-family:monospace;font-size:8pt">${s.qid||''}</td><td style="${qw?'background:#fdd;color:#900;font-weight:bold':''}">${fmtD(s.qidexp)}${qw?`<br><b style="font-size:7pt">${qd<0?'EXPIRED':qd+'d'}</b>`:''}</td><td>${s.gender||''}</td><td>${s.category||''}</td><td style="${fw?'background:#fdd;color:#900;font-weight:bold':''}">${fmtD(s.fhcexp)}${fw?`<br><b style="font-size:7pt">${fd<0?'EXPIRED':fd+'d'}</b>`:''}</td><td style="text-align:center">${qI}</td><td style="text-align:center">${fI}</td><td style="text-align:center">${sI}</td><td style="font-size:8pt;color:#666">${s.comment||''}</td></tr>`;}).join('');
-  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Staff Report</title><style>@page{size:A3 landscape;margin:9mm}body{font-family:Arial,sans-serif;font-size:9pt}.h{border-bottom:3px solid #c9a03a;padding-bottom:7px;margin-bottom:9px}.h h1{font-size:13pt;color:#0b1f3a;margin:0}.h p{color:#888;font-size:8.5pt}table{width:100%;border-collapse:collapse}th{background:#0b1f3a;color:#fff;padding:6px 8px;font-size:8pt;text-align:left}td{border:1px solid #ddd;padding:5px 8px;vertical-align:middle}tr:nth-child(even){background:#f7f7f7}.pbtn{position:fixed;top:10px;right:14px;padding:7px 16px;background:#0b1f3a;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:600}@media print{.pbtn{display:none}}</style></head><body><button class="pbtn" onclick="window.print()">🖨 Print/PDF</button><div class="h"><h1>🏢 Pilot Company — Staff Report</h1><p>${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})} · ${data.length} records · Powered by Bilal Javeed</p></div><table><thead><tr><th>Sr</th><th>Name</th><th>QID No.</th><th>QID Expiry</th><th>Gender</th><th>Category</th><th>FHC Expiry</th><th>QID Image</th><th>FHC Photo</th><th>Staff Photo</th><th>Comment</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const colDefs=[
+    {key:'sr',      header:'Sr',        cell:s=>`<td style="text-align:center;font-weight:700">${s.sr}</td>`},
+    {key:'name',    header:'Name',      cell:s=>`<td><b>${s.name}</b>${s.schedule?`<br><small>${s.schedule}</small>`:''}</td>`},
+    {key:'sch',     header:'Schedule Name', cell:s=>`<td>${s.schedule||''}</td>`},
+    {key:'qid',     header:'QID No.',   cell:s=>`<td style="font-family:monospace;font-size:8pt">${s.qid||''}</td>`},
+    {key:'qidexp',  header:'QID Expiry',cell:s=>`<td>${fmtDExport(s.qidexp)}</td>`},
+    {key:'gender',  header:'Gender',    cell:s=>`<td>${s.gender||''}</td>`},
+    {key:'cat',     header:'Category',  cell:s=>`<td>${s.category||''}</td>`},
+    {key:'fhcexp',  header:'FHC Expiry',cell:s=>`<td>${fmtDExport(s.fhcexp)}</td>`},
+    {key:'qidimg',  header:'QID Image', cell:s=>`<td style="text-align:center">${s.qidImgUrl?`<img src="${s.qidImgUrl}" style="max-width:130px;max-height:90px;border-radius:4px;border:1px solid #ddd">`:'—'}</td>`},
+    {key:'fhcimg',  header:'FHC Photo', cell:s=>`<td style="text-align:center">${s.fhcImgUrl?`<img src="${s.fhcImgUrl}" style="max-width:130px;max-height:90px;border-radius:4px;border:1px solid #ddd">`:'—'}</td>`},
+    {key:'staffimg',header:'Staff Photo',cell:s=>`<td style="text-align:center">${s.staffImgUrl?`<img src="${s.staffImgUrl}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #ddd">`:'—'}</td>`},
+    {key:'cmt',     header:'Comment',   cell:s=>`<td style="font-size:8pt;color:#666">${s.comment||''}</td>`},
+  ];
+  const activeCols=colDefs.filter(c=>isColOn(c.key));
+  const theadHtml=activeCols.map(c=>`<th>${c.header}</th>`).join('');
+  const rows=data.map(s=>`<tr>${activeCols.map(c=>c.cell(s)).join('')}</tr>`).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Staff Report</title><style>@page{size:A3 landscape;margin:9mm}body{font-family:Arial,sans-serif;font-size:9pt}.h{border-bottom:3px solid #c9a03a;padding-bottom:7px;margin-bottom:9px}.h h1{font-size:13pt;color:#0b1f3a;margin:0}.h p{color:#888;font-size:8.5pt}table{width:100%;border-collapse:collapse}th{background:#0b1f3a;color:#fff;padding:6px 8px;font-size:8pt;text-align:left}td{border:1px solid #ddd;padding:5px 8px;vertical-align:middle}tr:nth-child(even){background:#f7f7f7}.pbtn{position:fixed;top:10px;right:14px;padding:7px 16px;background:#0b1f3a;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:600}@media print{.pbtn{display:none}}</style></head><body><button class="pbtn" onclick="window.print()">🖨 Print/PDF</button><div class="h"><h1>🏢 Pilot Company — Staff Report</h1><p>${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})} · ${data.length} records · Powered by Bilal Javeed</p></div><table><thead><tr>${theadHtml}</tr></thead><tbody>${rows}</tbody></table></body></html>`;
   const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>{w.focus();w.print()},600)}toast('PDF report opened ✓','ok');
 }
 window.exportPDF = exportPDF;
@@ -1109,8 +1205,24 @@ window.exportPDF = exportPDF;
 function exportWord(sel){
   const data=getExportData(sel);if(!data||!data.length){if(data)toast('No records','err');return}
   const today=new Date().toLocaleDateString('en-GB');
-  const rows=data.map(s=>{const qw=soon(s.qidexp)||xpd(s.qidexp),fw=soon(s.fhcexp)||xpd(s.fhcexp);const qI=s.qidImgUrl?`<img src="${s.qidImgUrl}" width="80" height="54" style="border-radius:4px;border:1px solid #ddd;max-width:160px">`:'—';const fI=s.fhcImgUrl?`<img src="${s.fhcImgUrl}" width="80" height="54" style="border-radius:4px;border:1px solid #ddd;max-width:160px">`:'—';const sI=s.staffImgUrl?`<img src="${s.staffImgUrl}" width="50" height="50" style="border-radius:50%;border:2px solid #ddd">`:'—';return`<tr><td style="text-align:center"><b>${s.sr}</b></td><td><b>${s.name}</b><br><small>${s.schedule||''}</small></td><td>${s.qid||''}</td><td style="${qw?'background:#fcc':''}">${fmtD(s.qidexp)}</td><td>${s.gender||''}</td><td>${s.category||''}</td><td style="${fw?'background:#fcc':''}">${fmtD(s.fhcexp)}</td><td style="text-align:center">${qI}</td><td style="text-align:center">${fI}</td><td style="text-align:center">${sI}</td><td><small>${s.comment||''}</small></td></tr>`;}).join('');
-  const html=`<html xmlns:o='urn:schemas-microsoft-com:office:office'><head><meta charset='utf-8'><style>body{font-family:Calibri,sans-serif;font-size:9pt}h1{font-size:13pt;color:#0b1f3a}table{border-collapse:collapse;width:100%}th{background:#0b1f3a;color:#fff;padding:5pt 7pt;font-size:8.5pt;text-align:left}td{border:1pt solid #ccc;padding:4pt 7pt;vertical-align:middle;font-size:8.5pt}</style></head><body><h1>Pilot Company — Staff Database</h1><p style="color:#888;font-size:8.5pt">Date: ${today} | Records: ${data.length} | Powered by Bilal Javeed</p><table><thead><tr><th>Sr</th><th>Name</th><th>QID No</th><th>QID Expiry</th><th>Gender</th><th>Category</th><th>FHC Expiry</th><th>QID Image</th><th>FHC Photo</th><th>Staff Photo</th><th>Comment</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const colDefs=[
+    {key:'sr',      header:'Sr',        cell:s=>`<td style="text-align:center"><b>${s.sr}</b></td>`},
+    {key:'name',    header:'Name',      cell:s=>`<td><b>${s.name}</b>${s.schedule?`<br><small>${s.schedule}</small>`:''}</td>`},
+    {key:'sch',     header:'Schedule Name', cell:s=>`<td>${s.schedule||''}</td>`},
+    {key:'qid',     header:'QID No',    cell:s=>`<td>${s.qid||''}</td>`},
+    {key:'qidexp',  header:'QID Expiry',cell:s=>`<td>${fmtDExport(s.qidexp)}</td>`},
+    {key:'gender',  header:'Gender',    cell:s=>`<td>${s.gender||''}</td>`},
+    {key:'cat',     header:'Category',  cell:s=>`<td>${s.category||''}</td>`},
+    {key:'fhcexp',  header:'FHC Expiry',cell:s=>`<td>${fmtDExport(s.fhcexp)}</td>`},
+    {key:'qidimg',  header:'QID Image', cell:s=>`<td style="text-align:center">${s.qidImgUrl?`<img src="${s.qidImgUrl}" width="80" height="54" style="border-radius:4px;border:1px solid #ddd;max-width:160px">`:'—'}</td>`},
+    {key:'fhcimg',  header:'FHC Photo', cell:s=>`<td style="text-align:center">${s.fhcImgUrl?`<img src="${s.fhcImgUrl}" width="80" height="54" style="border-radius:4px;border:1px solid #ddd;max-width:160px">`:'—'}</td>`},
+    {key:'staffimg',header:'Staff Photo',cell:s=>`<td style="text-align:center">${s.staffImgUrl?`<img src="${s.staffImgUrl}" width="50" height="50" style="border-radius:50%;border:2px solid #ddd">`:'—'}</td>`},
+    {key:'cmt',     header:'Comment',   cell:s=>`<td><small>${s.comment||''}</small></td>`},
+  ];
+  const activeCols=colDefs.filter(c=>isColOn(c.key));
+  const theadHtml=activeCols.map(c=>`<th>${c.header}</th>`).join('');
+  const rows=data.map(s=>`<tr>${activeCols.map(c=>c.cell(s)).join('')}</tr>`).join('');
+  const html=`<html xmlns:o='urn:schemas-microsoft-com:office:office'><head><meta charset='utf-8'><style>body{font-family:Calibri,sans-serif;font-size:9pt}h1{font-size:13pt;color:#0b1f3a}table{border-collapse:collapse;width:100%}th{background:#0b1f3a;color:#fff;padding:5pt 7pt;font-size:8.5pt;text-align:left}td{border:1pt solid #ccc;padding:4pt 7pt;vertical-align:middle;font-size:8.5pt}</style></head><body><h1>Pilot Company — Staff Database</h1><p style="color:#888;font-size:8.5pt">Date: ${today} | Records: ${data.length} | Powered by Bilal Javeed</p><table><thead><tr>${theadHtml}</tr></thead><tbody>${rows}</tbody></table></body></html>`;
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'application/msword'}));a.download='PilotCompany_Staff_'+today.replace(/\//g,'-')+'.doc';a.click();toast('Word document downloaded ✓','ok');
 }
 window.exportWord = exportWord;
